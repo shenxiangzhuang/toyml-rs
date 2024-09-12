@@ -1,2 +1,2 @@
-# toyml-rs
-ToyML in Rust!
+# RustML
+Machine Learning from Scratch in Rust!

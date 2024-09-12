@@ -14,10 +14,12 @@ classifiers = [
 dynamic = ["version"]
 [tool.maturin]
 features = ["pyo3/extension-module"]
+module-name = "rustml._rustml"
 python-source = "python"
 
 [project.optional-dependencies]
-lint = ["ruff"]
+dev = ["ipython", "ruff"]
+
 
 [tool.ruff]
 line-length = 119

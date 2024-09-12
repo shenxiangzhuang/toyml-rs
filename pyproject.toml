@@ -14,6 +14,28 @@ classifiers = [
 dynamic = ["version"]
 [tool.maturin]
 features = ["pyo3/extension-module"]
+python-source = "python"
 
 [project.optional-dependencies]
-dev = ["ipython", "ruff"]
+lint = ["ruff"]
+
+[tool.ruff]
+line-length = 119
+target-version = "py38"
+lint.ignore = [
+    # a == None in tests vs is None.
+    "E711",
+    # a == False in tests vs is False.
+    "E712",
+    # try xx import except xx pattern without using the lib.
+    "F401",
+    # Raw type equality is required in asserts
+    "E721",
+    # Import order
+    "E402",
+    # Fixtures unused import
+    "F811",
+    # To ignore python/blerscore/__init__.py import errors
+    "F403",
+    "F405",
+]

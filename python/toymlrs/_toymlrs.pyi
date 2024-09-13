@@ -1,5 +1,7 @@
 __version__: str = ...
-"""The version of RustML."""
+"""The version of Toyml-RS."""
+
+__all__: list[str] = ...
 
 def sum_as_string(
         a: int,

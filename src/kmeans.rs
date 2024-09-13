@@ -1,69 +1,193 @@
-use rand::Rng;
+use std::collections::HashMap;
 use std::f64;
+use rand::prelude::SeedableRng;
 
-#[derive(Debug, Clone)]
-pub struct Point {
-    pub x: f64,
-    pub y: f64,
-}
+/// Dataset structs
+#[derive(Default, Debug, Clone, PartialEq)]
+struct PointValue(f64);
 
-impl Point {
-    fn distance(&self, other: &Point) -> f64 {
-        ((self.x - other.x).powi(2) + (self.y - other.y).powi(2)).sqrt()
+#[derive(Default, Debug, Clone, PartialEq)]
+struct Point(Vec<PointValue>);
+
+#[derive(Default, Debug, PartialEq)]
+struct Dataset(Vec<Point>);
+
+impl Dataset {
+    pub fn get_init_centroids(self, centroids_init_method: &str, k: usize, random_seed: usize) -> Centroids {
+        match centroids_init_method {
+            "random" => Centroids {
+                centroid_map: HashMap::from_iter(
+                    self.sample(k, random_seed).0
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, point)| (ClusterIndex(i), point.0))
+                ),
+            },
+            // TODO: support kmeans++
+            _ => panic!("Only support random initialize method!")
+        }
+    }
+
+    fn sample(&self, k: usize, random_seed: usize) -> Dataset {
+        use rand::seq::SliceRandom;
+        let mut rng = rand::rngs::StdRng::seed_from_u64(random_seed as u64);
+        Dataset((0..self.0.len()).collect::<Vec<_>>().choose_multiple(&mut rng, k).into_iter().map(|i| self.0[*i].clone()).collect())
     }
 }
 
-pub fn kmeans(points: &[Point], k: usize, max_iterations: usize) -> Vec<Vec<usize>> {
-    let mut rng = rand::thread_rng();
-    let mut centroids: Vec<Point> = (0..k)
-        .map(|_| Point {
-            x: rng.gen_range(0.0..100.0),
-            y: rng.gen_range(0.0..100.0),
-        })
-        .collect();
 
-    let mut clusters: Vec<Vec<usize>> = vec![Vec::new(); k];
+/// K-means structs
+#[derive(Default, Debug, Eq, PartialEq, Hash)]
+pub struct ClusterIndex(usize);
 
-    for _ in 0..max_iterations {
-        // Assign points to clusters
-        clusters.iter_mut().for_each(|c| c.clear());
-        for (i, point) in points.iter().enumerate() {
-            let closest_centroid = centroids
-                .iter()
-                .enumerate()
-                .min_by(|(_, a), (_, b)| {
-                    point.distance(a).partial_cmp(&point.distance(b)).unwrap()
-                })
-                .map(|(index, _)| index)
-                .unwrap();
-            clusters[closest_centroid].push(i);
+#[derive(Default, Debug)]
+struct Label(usize);
+
+#[derive(Default, Debug)]
+pub struct Labels(Vec<Label>);
+
+
+#[derive(Default, Debug)]
+pub struct Cluster {
+    cluster: Vec<Label>,
+}
+
+#[derive(Debug)]
+pub struct Clusters {
+    pub cluster_map: HashMap<ClusterIndex, Cluster>
+}
+
+impl Default for Clusters {
+    fn default() -> Self {
+        Self {
+            cluster_map: HashMap::new()
         }
+    }
+}
 
-        // Update centroids
-        let mut new_centroids = vec![Point { x: 0.0, y: 0.0 }; k];
-        for (i, cluster) in clusters.iter().enumerate() {
-            if !cluster.is_empty() {
-                let (sum_x, sum_y) = cluster.iter().fold((0.0, 0.0), |(sx, sy), &idx| {
-                    (sx + points[idx].x, sy + points[idx].y)
-                });
-                new_centroids[i] = Point {
-                    x: sum_x / cluster.len() as f64,
-                    y: sum_y / cluster.len() as f64,
-                };
-            }
+#[derive(Default, Debug)]
+struct Centroid {
+    centroid: Vec<PointValue>,
+}
+
+#[derive(Debug)]
+pub struct Centroids {
+    pub centroid_map: HashMap<ClusterIndex, Vec<PointValue>>,
+}
+
+impl Default for Centroids {
+    fn default() -> Self {
+        Self {
+            centroid_map: HashMap::new()
         }
+    }
+}
 
-        // Check for convergence
-        if centroids
-            .iter()
-            .zip(new_centroids.iter())
-            .all(|(a, b)| a.distance(b) < 1e-6)
-        {
-            break;
+
+
+#[derive(Debug)]
+pub struct Kmeans {
+    pub k: usize,
+    pub max_iter: usize,
+    pub tolerance: f64,
+    pub centroids_init_method: &'static str,
+    pub random_seed: usize,
+    pub distance_metric: &'static str,
+    clusters: Clusters,
+    centroids: Centroids,
+    labels: Labels,
+}
+
+impl Default for Kmeans {
+    fn default() -> Self {
+        Kmeans {
+            k: 5,
+            max_iter: 500,
+            tolerance: 1e-5,
+            centroids_init_method: "random",
+            random_seed: 42,
+            distance_metric: "euclidean",
+            clusters: Clusters::default(),
+            centroids: Centroids::default(),
+            labels: Labels::default(),
         }
+    }
+}
 
-        centroids = new_centroids;
+
+impl Kmeans {
+    pub fn fit(&mut self, dataset: Dataset){
+        self.centroids = dataset.get_init_centroids(self.centroids_init_method,
+                                                    self.k,
+                                                    self.random_seed);
+        println!("{:?}", self.centroids);
     }
 
-    clusters
+    pub fn get_clusters(&self) -> &Clusters {
+        &self.clusters
+    }
+
+    pub fn get_centroids(&self) -> &Centroids {
+        &self.centroids
+    }
+
+    pub fn get_labels(&self) -> &Labels {
+        &self.labels
+    }
 }
+
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_kmeans_fit() {
+        let mut kmeans = Kmeans{k: 2, ..Default::default() };
+        let dataset = Dataset(vec![
+            Point(vec![PointValue(1.0), PointValue(2.0)]),
+            Point(vec![PointValue(3.0), PointValue(4.0)]),
+            Point(vec![PointValue(5.0), PointValue(6.0)]),
+            Point(vec![PointValue(7.0), PointValue(8.0)]),
+        ]);
+        kmeans.fit(dataset);
+        println!("{:?}", kmeans.centroids);
+    }
+
+    #[test]
+    fn test_dataset_get_init_centroids() {
+        let dataset = Dataset(vec![
+            Point(vec![PointValue(1.0), PointValue(2.0)]),
+            Point(vec![PointValue(3.0), PointValue(4.0)]),
+            Point(vec![PointValue(5.0), PointValue(6.0)]),
+            Point(vec![PointValue(7.0), PointValue(8.0)]),
+        ]);
+
+        let centroids = dataset.get_init_centroids("random", 2, 42);
+
+        assert_eq!(centroids.centroid_map.len(), 2);
+        for (_, centroid) in centroids.centroid_map.iter() {
+            assert_eq!(centroid.len(), 2);
+        }
+    }
+
+    #[test]
+    fn test_dataset_sample() {
+        let dataset = Dataset(vec![
+            Point(vec![PointValue(1.0), PointValue(2.0)]),
+            Point(vec![PointValue(3.0), PointValue(4.0)]),
+            Point(vec![PointValue(5.0), PointValue(6.0)]),
+            Point(vec![PointValue(7.0), PointValue(8.0)]),
+        ]);
+
+        let sampled = dataset.sample(2, 42);
+
+        assert_eq!(sampled.0.len(), 2);
+        for point in sampled.0.iter() {
+            assert!(dataset.0.contains(point));
+        }
+    }
+}
+
+

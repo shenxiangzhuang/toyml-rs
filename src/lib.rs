@@ -8,7 +8,7 @@ fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn _rustml(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn _toymlrs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
     Ok(())

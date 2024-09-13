@@ -1,7 +1,4 @@
-from ._toymlrs import __version__, sum_as_string
+from ._toymlrs import *
 
 __doc__ = _toymlrs.__doc__
-__all__ = [
-    "__version__",
-    "sum_as_string",
-]
+__all__ = _toymlrs.__all__

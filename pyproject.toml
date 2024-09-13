@@ -22,10 +22,8 @@ dev = ["ipython", "ruff"]
 
 
 [tool.ruff]
-line-length = 119
+line-length = 120
 target-version = "py38"
-lint.ignore = [
-    # To ignore python/blerscore/__init__.py import errors
-    "F403",
-    "F405",
-]
+
+[tool.ruff.lint]
+ignore = ["F403", "F405"]

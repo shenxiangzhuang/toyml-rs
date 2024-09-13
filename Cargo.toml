@@ -1,10 +1,10 @@
 [package]
-name = "rustml"
-version = "0.1.0"
+name = "toymlrs"
+version = "0.0.1"
 edition = "2021"
 
 [lib]
-name = "rustml"
+name = "toymlrs"
 # "cdylib" is necessary to produce a shared library for Python to import from.
 crate-type = ["cdylib"]
 

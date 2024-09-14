@@ -4,7 +4,7 @@ use std::f64;
 
 /// Dataset structs
 #[derive(Default, Debug, Clone, PartialEq)]
-struct Point {
+pub struct Point {
     values: Vec<f64>,
 }
 
@@ -37,7 +37,7 @@ impl Point {
 
 
 #[derive(Default, Debug, PartialEq)]
-struct Points(Vec<Point>);
+pub struct Points(Vec<Point>);
 
 impl Points {
     pub fn get_init_centroids(
@@ -84,12 +84,12 @@ impl Points {
 #[derive(Default, Debug)]
 pub struct Labels(Vec<usize>);
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Eq, PartialEq, Clone)]
 pub struct Cluster {
     point_indices: Vec<usize>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Clusters {
     pub cluster_map: HashMap<usize, Cluster>,
 }
@@ -215,9 +215,14 @@ impl Kmeans {
             points.get_init_centroids(self.centroids_init_method, self.k, self.random_seed);
         let mut iter: usize = 0;
         while iter < self.max_iter {
+            let old_clusters = self.clusters.clone();
             self.fit_one_step(points);
+            // Early stop
+            if self.clusters == old_clusters {
+                println!("Early stop");
+                break;
+            }
             iter += 1;
-            // TODO: Early stop check here
         }
     }
 
@@ -274,7 +279,7 @@ mod tests {
             ..Default::default()
         };
         let dataset = create_test_points();
-        kmeans.fit(dataset);
+        kmeans.fit(&dataset);
         println!("{:?}", kmeans.centroids);
     }
 

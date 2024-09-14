@@ -10,8 +10,54 @@ struct Point {
 }
 
 impl Point {
+    pub fn dim(&self) -> usize {
+        self.values.len()
+    }
+
+    pub fn distance(&self, other: &Point, distance_metric: &str) -> f64 {
+        if self.values.len() != other.values.len() {
+            panic!(
+                "Points with different dimensions are not supported: {:?}, {:?}",
+                self.values, other.values
+            );
+        }
+        match distance_metric {
+            "euclidean" => self
+                .values
+                .iter()
+                .zip(other.values.iter())
+                .map(|(x, y)| (x - y).powi(2))
+                .sum::<f64>()
+                .powf(1.0 / 2.0),
+            _ => {
+                panic!("Only euclidean distance metric is supported")
+            }
+        }
+    }
+}
+
+impl Point {
     pub fn get_nearest_cluster_index(&self, centroids: &Centroids) -> usize {
-        unimplemented!("get_nearest_cluster_index() is not implemented yet")
+        let index = centroids
+            .centroid_map
+            .iter()
+            .map(|(&centroid_index, centroid_point)| {
+                (centroid_index, self.distance(centroid_point, "euclidean"))
+            })
+            .fold(
+                (0, f64::MAX),
+                |(current_index, current_distance), (centroid_index, distance)| {
+                    if distance < current_distance {
+                        (centroid_index, distance)
+                    } else {
+                        (current_index, current_distance)
+                    }
+                },
+            )
+            .0;
+
+        println!("Point {:?}, Nearest Cluster {:?}", self, index);
+        index
     }
 }
 
@@ -36,17 +82,13 @@ impl Points {
                 ),
             },
             "kmeans++" => {
-                unimplemented!("kmeans++ init centroids is not implemented yet");
+                panic!("kmeans++ init centroids is not implemented yet");
             }
             _ => panic!(
                 "Don't support the initialize method: {:?}!",
                 centroids_init_method
             ),
         }
-    }
-
-    pub fn mean(&self) -> Point {
-        unimplemented!("mean() is not implemented yet");
     }
 
     fn sample(&self, k: usize, random_seed: usize) -> Points {
@@ -72,12 +114,6 @@ pub struct Cluster {
     point_indices: Vec<usize>,
 }
 
-impl Cluster {
-    pub fn get_points(&self, points: &Points) -> &Points {
-        unimplemented!("get_cluster_points() is not implemented yet");
-    }
-}
-
 #[derive(Debug)]
 pub struct Clusters {
     pub cluster_map: HashMap<usize, Cluster>,
@@ -95,7 +131,20 @@ impl Clusters {
     pub fn get_centroids(&self, points: &Points) -> Centroids {
         Centroids {
             centroid_map: HashMap::from_iter(self.cluster_map.iter().map(
-                |(&cluster_index, cluster)| (cluster_index, cluster.get_points(points).mean()),
+                |(&cluster_index, cluster)| {
+                    (
+                        cluster_index,
+                        Point {
+                            values: cluster
+                                .point_indices
+                                .iter()
+                                .map(|&point_index| &points.0[point_index].values)
+                                .fold(vec![0.0; points.0[0].dim()], |acc_p, p| {
+                                    acc_p.iter().zip(p.iter()).map(|(&a, &b)| a + b).collect()
+                                }).iter().map(|x| x / points.0.len() as f64).collect(),
+                        },
+                    )
+                },
             )),
         }
     }
@@ -117,10 +166,10 @@ impl Default for Centroids {
 impl Centroids {
     fn get_clusters(&self, points: &Points) -> Clusters {
         let mut clusters = Clusters::default();
-        let _ = points.0.iter().enumerate().map(|(index, point)| {
+        points.0.iter().enumerate().for_each(|(index, point)| {
             clusters
                 .cluster_map
-                .entry(point.get_nearest_cluster_index(&self))
+                .entry(point.get_nearest_cluster_index(self))
                 .or_insert(Cluster::default())
                 .point_indices
                 .push(index);
@@ -166,6 +215,7 @@ impl Kmeans {
         while iter < self.max_iter {
             println!("{:?}", self.centroids);
             self.clusters = self.centroids.get_clusters(&points);
+            println!("{:?}", self.clusters);
             self.centroids = self.clusters.get_centroids(&points);
             // TODO: Early stop check here
             iter += 1;
@@ -191,18 +241,12 @@ mod tests {
 
     fn create_test_points() -> Points {
         Points(vec![
-            Point {
-                values: vec![1.0, 2.0],
-            },
-            Point {
-                values: vec![3.0, 4.0],
-            },
-            Point {
-                values: vec![5.0, 6.0],
-            },
-            Point {
-                values: vec![7.0, 8.0],
-            },
+            Point { values: vec![1.0, 0.0] },
+            Point { values: vec![1.0, 1.0] },
+            Point { values: vec![1.0, 2.0] },
+            Point { values: vec![10.0, 0.0] },
+            Point { values: vec![10.0, 1.0] },
+            Point { values: vec![10.0, 2.0] },
         ])
     }
 
@@ -210,6 +254,7 @@ mod tests {
     fn test_kmeans_fit() {
         let mut kmeans = Kmeans {
             k: 2,
+            max_iter: 100,
             ..Default::default()
         };
         let dataset = create_test_points();

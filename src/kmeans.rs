@@ -5,7 +5,9 @@ use rand::prelude::SeedableRng;
 /// Dataset structs
 
 #[derive(Default, Debug, Clone, PartialEq)]
-struct Point(Vec<f64>);
+struct Point {
+    values: Vec<f64>,
+}
 
 impl Point {
     pub fn get_nearest_cluster_index(&self, centroids: &Centroids) -> usize {
@@ -188,10 +190,10 @@ mod tests {
 
     fn create_test_points() -> Points {
         Points(vec![
-            Point(vec![1.0, 2.0]),
-            Point(vec![3.0, 4.0]),
-            Point(vec![5.0, 6.0]),
-            Point(vec![7.0, 8.0]),
+            Point{values: vec![1.0, 2.0]},
+            Point{values: vec![3.0, 4.0]},
+            Point{values: vec![5.0, 6.0]},
+            Point{values: vec![7.0, 8.0]},
         ])
     }
 
@@ -210,7 +212,7 @@ mod tests {
 
         assert_eq!(centroids.centroid_map.len(), 2);
         for (_, centroid) in centroids.centroid_map.iter() {
-            assert_eq!(centroid.0.len(), 2);
+            assert_eq!(centroid.values.len(), 2);
         }
     }
 

@@ -3,11 +3,9 @@ use std::f64;
 use rand::prelude::SeedableRng;
 
 /// Dataset structs
-#[derive(Default, Debug, Clone, PartialEq)]
-struct PointValue(f64);
 
 #[derive(Default, Debug, Clone, PartialEq)]
-struct Point(Vec<PointValue>);
+struct Point(Vec<f64>);
 
 #[derive(Default, Debug, PartialEq)]
 struct Dataset(Vec<Point>);
@@ -41,15 +39,12 @@ impl Dataset {
 pub struct ClusterIndex(usize);
 
 #[derive(Default, Debug)]
-struct Label(usize);
-
-#[derive(Default, Debug)]
-pub struct Labels(Vec<Label>);
+pub struct Labels(Vec<usize>);
 
 
 #[derive(Default, Debug)]
 pub struct Cluster {
-    cluster: Vec<Label>,
+    cluster: Vec<usize>,
 }
 
 #[derive(Debug)]
@@ -67,12 +62,12 @@ impl Default for Clusters {
 
 #[derive(Default, Debug)]
 struct Centroid {
-    centroid: Vec<PointValue>,
+    centroid: Vec<f64>,
 }
 
 #[derive(Debug)]
 pub struct Centroids {
-    pub centroid_map: HashMap<ClusterIndex, Vec<PointValue>>,
+    pub centroid_map: HashMap<ClusterIndex, Vec<f64>>,
 }
 
 impl Default for Centroids {
@@ -142,28 +137,26 @@ impl Kmeans {
 mod tests {
     use super::*;
 
+    fn create_test_dataset() -> Dataset {
+        Dataset(vec![
+            Point(vec![1.0, 2.0]),
+            Point(vec![3.0, 4.0]),
+            Point(vec![5.0, 6.0]),
+            Point(vec![7.0, 8.0]),
+        ])
+    }
+
     #[test]
     fn test_kmeans_fit() {
         let mut kmeans = Kmeans{k: 2, ..Default::default() };
-        let dataset = Dataset(vec![
-            Point(vec![PointValue(1.0), PointValue(2.0)]),
-            Point(vec![PointValue(3.0), PointValue(4.0)]),
-            Point(vec![PointValue(5.0), PointValue(6.0)]),
-            Point(vec![PointValue(7.0), PointValue(8.0)]),
-        ]);
+        let dataset = create_test_dataset();
         kmeans.fit(dataset);
         println!("{:?}", kmeans.centroids);
     }
 
     #[test]
     fn test_dataset_get_init_centroids() {
-        let dataset = Dataset(vec![
-            Point(vec![PointValue(1.0), PointValue(2.0)]),
-            Point(vec![PointValue(3.0), PointValue(4.0)]),
-            Point(vec![PointValue(5.0), PointValue(6.0)]),
-            Point(vec![PointValue(7.0), PointValue(8.0)]),
-        ]);
-
+        let dataset = create_test_dataset();
         let centroids = dataset.get_init_centroids("random", 2, 42);
 
         assert_eq!(centroids.centroid_map.len(), 2);
@@ -174,13 +167,7 @@ mod tests {
 
     #[test]
     fn test_dataset_sample() {
-        let dataset = Dataset(vec![
-            Point(vec![PointValue(1.0), PointValue(2.0)]),
-            Point(vec![PointValue(3.0), PointValue(4.0)]),
-            Point(vec![PointValue(5.0), PointValue(6.0)]),
-            Point(vec![PointValue(7.0), PointValue(8.0)]),
-        ]);
-
+        let dataset = create_test_dataset();
         let sampled = dataset.sample(2, 42);
 
         assert_eq!(sampled.0.len(), 2);

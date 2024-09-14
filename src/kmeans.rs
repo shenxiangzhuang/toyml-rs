@@ -130,22 +130,17 @@ impl Default for Clusters {
 impl Clusters {
     pub fn get_centroids(&self, points: &Points) -> Centroids {
         Centroids {
-            centroid_map: HashMap::from_iter(self.cluster_map.iter().map(
-                |(&cluster_index, cluster)| {
-                    (
-                        cluster_index,
-                        Point {
-                            values: cluster
-                                .point_indices
-                                .iter()
-                                .map(|&point_index| &points.0[point_index].values)
-                                .fold(vec![0.0; points.0[0].dim()], |acc_p, p| {
-                                    acc_p.iter().zip(p.iter()).map(|(&a, &b)| a + b).collect()
-                                }).iter().map(|x| x / points.0.len() as f64).collect(),
-                        },
-                    )
-                },
-            )),
+            centroid_map: self.cluster_map.iter().map(|(&cluster_index, cluster)| {
+                let sum: Vec<f64> = cluster.point_indices.iter()
+                    .map(|&i| &points.0[i].values)
+                    .fold(vec![0.0; points.0[0].dim()], |acc, p| {
+                        acc.iter().zip(p).map(|(a, b)| a + b).collect()
+                    });
+                let centroid = Point {
+                    values: sum.into_iter().map(|x| x / cluster.point_indices.len() as f64).collect(),
+                };
+                (cluster_index, centroid)
+            }).collect()
         }
     }
 }

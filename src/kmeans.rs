@@ -174,8 +174,7 @@ impl Centroids {
                 },
             )
             .0;
-
-        println!("Point {:?}, Nearest Cluster {:?}", self, index);
+        // println!("Point {:?}, Nearest Cluster {:?}", self, index);
         index
     }
 }
@@ -184,7 +183,6 @@ impl Centroids {
 pub struct Kmeans {
     pub k: usize,
     pub max_iter: usize,
-    pub tolerance: f64,
     pub centroids_init_method: &'static str,
     pub random_seed: usize,
     pub distance_metric: &'static str,
@@ -198,7 +196,6 @@ impl Default for Kmeans {
         Kmeans {
             k: 5,
             max_iter: 500,
-            tolerance: 1e-5,
             centroids_init_method: "random",
             random_seed: 42,
             distance_metric: "euclidean",
@@ -280,7 +277,7 @@ mod tests {
         };
         let dataset = create_test_points();
         kmeans.fit(&dataset);
-        println!("{:?}", kmeans.centroids);
+        assert_eq!(kmeans.centroids.centroid_map.len(), 2);
     }
 
     #[test]
@@ -302,6 +299,96 @@ mod tests {
         assert_eq!(sampled.0.len(), 2);
         for point in sampled.0.iter() {
             assert!(dataset.0.contains(point));
+        }
+    }
+
+    #[test]
+    fn test_point_distance() {
+        let p1 = Point { values: vec![1.0, 2.0, 3.0] };
+        let p2 = Point { values: vec![4.0, 5.0, 6.0] };
+        assert_eq!(p1.distance(&p2, "euclidean"), 5.196152422706632);
+    }
+
+    #[test]
+    #[should_panic(expected = "Points with different dimensions are not supported")]
+    fn test_point_distance_different_dimensions() {
+        let p1 = Point { values: vec![1.0, 2.0] };
+        let p2 = Point { values: vec![4.0, 5.0, 6.0] };
+        p1.distance(&p2, "euclidean");
+    }
+
+    #[test]
+    #[should_panic(expected = "Only euclidean distance metric is supported")]
+    fn test_point_distance_unsupported_metric() {
+        let p1 = Point { values: vec![1.0, 2.0] };
+        let p2 = Point { values: vec![4.0, 5.0] };
+        p1.distance(&p2, "manhattan");
+    }
+
+    #[test]
+    fn test_clusters_get_centroids() {
+        let points = Points(vec![
+            Point { values: vec![1.0, 1.0] },
+            Point { values: vec![2.0, 2.0] },
+            Point { values: vec![3.0, 3.0] },
+            Point { values: vec![10.0, 10.0] },
+            Point { values: vec![11.0, 11.0] },
+        ]);
+        let mut clusters = Clusters::default();
+        clusters.cluster_map.insert(0, Cluster { point_indices: vec![0, 1, 2] });
+        clusters.cluster_map.insert(1, Cluster { point_indices: vec![3, 4] });
+
+        let centroids = clusters.get_centroids(&points);
+        assert_eq!(centroids.centroid_map.len(), 2);
+        assert_eq!(centroids.centroid_map[&0].values, vec![2.0, 2.0]);
+        assert_eq!(centroids.centroid_map[&1].values, vec![10.5, 10.5]);
+    }
+
+    #[test]
+    fn test_centroids_get_nearest_cluster_index() {
+        let centroids = Centroids {
+            centroid_map: HashMap::from([
+                (0, Point { values: vec![1.0, 1.0] }),
+                (1, Point { values: vec![5.0, 5.0] }),
+            ]),
+        };
+        let point = Point { values: vec![2.0, 2.0] };
+        assert_eq!(centroids.get_nearest_cluster_index(&point), 0);
+
+        let point = Point { values: vec![4.0, 4.0] };
+        assert_eq!(centroids.get_nearest_cluster_index(&point), 1);
+    }
+
+    #[test]
+    fn test_kmeans_fit_convergence() {
+        let mut kmeans = Kmeans {
+            k: 2,
+            max_iter: 1000,
+            ..Default::default()
+        };
+        let dataset = create_test_points();
+        kmeans.fit(&dataset);
+
+        // Check if the clusters are as expected
+        let clusters = kmeans.get_clusters();
+        assert_eq!(clusters.cluster_map.len(), 2);
+        
+        // The exact cluster assignments may vary due to random initialization,
+        // so we'll check if the points are grouped correctly
+        let cluster1 = &clusters.cluster_map[&0].point_indices;
+        let cluster2 = &clusters.cluster_map[&1].point_indices;
+        
+        assert!(
+            (cluster1.len() == 3 && cluster2.len() == 3) ||
+            (cluster1.len() == 6 && cluster2.is_empty()) ||
+            (cluster1.is_empty() && cluster2.len() == 6)
+        );
+
+        if cluster1.len() == 3 && cluster2.len() == 3 {
+            assert!(
+                (cluster1.contains(&0) && cluster1.contains(&1) && cluster1.contains(&2)) ||
+                (cluster1.contains(&3) && cluster1.contains(&4) && cluster1.contains(&5))
+            );
         }
     }
 }

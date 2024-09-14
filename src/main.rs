@@ -1,6 +1,6 @@
 mod kmeans;
 
-use kmeans::{Kmeans};
+use kmeans::Kmeans;
 
 fn main() {
     let kmeans = Kmeans::default();

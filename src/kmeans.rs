@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use std::f64;
 
 /// Dataset structs
-
 #[derive(Default, Debug, Clone, PartialEq)]
 struct Point {
     values: Vec<f64>,
@@ -36,30 +35,6 @@ impl Point {
     }
 }
 
-impl Point {
-    pub fn get_nearest_cluster_index(&self, centroids: &Centroids) -> usize {
-        let index = centroids
-            .centroid_map
-            .iter()
-            .map(|(&centroid_index, centroid_point)| {
-                (centroid_index, self.distance(centroid_point, "euclidean"))
-            })
-            .fold(
-                (0, f64::MAX),
-                |(current_index, current_distance), (centroid_index, distance)| {
-                    if distance < current_distance {
-                        (centroid_index, distance)
-                    } else {
-                        (current_index, current_distance)
-                    }
-                },
-            )
-            .0;
-
-        println!("Point {:?}, Nearest Cluster {:?}", self, index);
-        index
-    }
-}
 
 #[derive(Default, Debug, PartialEq)]
 struct Points(Vec<Point>);
@@ -130,17 +105,26 @@ impl Default for Clusters {
 impl Clusters {
     pub fn get_centroids(&self, points: &Points) -> Centroids {
         Centroids {
-            centroid_map: self.cluster_map.iter().map(|(&cluster_index, cluster)| {
-                let sum: Vec<f64> = cluster.point_indices.iter()
-                    .map(|&i| &points.0[i].values)
-                    .fold(vec![0.0; points.0[0].dim()], |acc, p| {
-                        acc.iter().zip(p).map(|(a, b)| a + b).collect()
-                    });
-                let centroid = Point {
-                    values: sum.into_iter().map(|x| x / cluster.point_indices.len() as f64).collect(),
-                };
-                (cluster_index, centroid)
-            }).collect()
+            centroid_map: self
+                .cluster_map
+                .iter()
+                .map(|(&cluster_index, cluster)| {
+                    let sum: Vec<f64> = cluster
+                        .point_indices
+                        .iter()
+                        .map(|&i| &points.0[i].values)
+                        .fold(vec![0.0; points.0[0].dim()], |acc, p| {
+                            acc.iter().zip(p).map(|(a, b)| a + b).collect()
+                        });
+                    let centroid = Point {
+                        values: sum
+                            .into_iter()
+                            .map(|x| x / cluster.point_indices.len() as f64)
+                            .collect(),
+                    };
+                    (cluster_index, centroid)
+                })
+                .collect(),
         }
     }
 }
@@ -164,12 +148,35 @@ impl Centroids {
         points.0.iter().enumerate().for_each(|(index, point)| {
             clusters
                 .cluster_map
-                .entry(point.get_nearest_cluster_index(self))
+                .entry(self.get_nearest_cluster_index(point))
                 .or_insert(Cluster::default())
                 .point_indices
                 .push(index);
         });
         clusters
+    }
+
+    pub fn get_nearest_cluster_index(&self, point: &Point) -> usize {
+        let index = self
+            .centroid_map
+            .iter()
+            .map(|(&centroid_index, centroid_point)| {
+                (centroid_index, centroid_point.distance(point, "euclidean"))
+            })
+            .fold(
+                (0, f64::MAX),
+                |(current_index, current_distance), (centroid_index, distance)| {
+                    if distance < current_distance {
+                        (centroid_index, distance)
+                    } else {
+                        (current_index, current_distance)
+                    }
+                },
+            )
+            .0;
+
+        println!("Point {:?}, Nearest Cluster {:?}", self, index);
+        index
     }
 }
 
@@ -203,18 +210,20 @@ impl Default for Kmeans {
 }
 
 impl Kmeans {
-    pub fn fit(&mut self, points: Points) {
+    pub fn fit(&mut self, points: &Points) {
         self.centroids =
             points.get_init_centroids(self.centroids_init_method, self.k, self.random_seed);
         let mut iter: usize = 0;
         while iter < self.max_iter {
-            println!("{:?}", self.centroids);
-            self.clusters = self.centroids.get_clusters(&points);
-            println!("{:?}", self.clusters);
-            self.centroids = self.clusters.get_centroids(&points);
-            // TODO: Early stop check here
+            self.fit_one_step(points);
             iter += 1;
+            // TODO: Early stop check here
         }
+    }
+
+    pub fn fit_one_step(&mut self, points: &Points) {
+        self.clusters = self.centroids.get_clusters(&points);
+        self.centroids = self.clusters.get_centroids(&points);
     }
 
     pub fn get_clusters(&self) -> &Clusters {
@@ -236,12 +245,24 @@ mod tests {
 
     fn create_test_points() -> Points {
         Points(vec![
-            Point { values: vec![1.0, 0.0] },
-            Point { values: vec![1.0, 1.0] },
-            Point { values: vec![1.0, 2.0] },
-            Point { values: vec![10.0, 0.0] },
-            Point { values: vec![10.0, 1.0] },
-            Point { values: vec![10.0, 2.0] },
+            Point {
+                values: vec![1.0, 0.0],
+            },
+            Point {
+                values: vec![1.0, 1.0],
+            },
+            Point {
+                values: vec![1.0, 2.0],
+            },
+            Point {
+                values: vec![10.0, 0.0],
+            },
+            Point {
+                values: vec![10.0, 1.0],
+            },
+            Point {
+                values: vec![10.0, 2.0],
+            },
         ])
     }
 

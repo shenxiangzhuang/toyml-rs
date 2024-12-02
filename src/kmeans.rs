@@ -1,6 +1,5 @@
 use rand::prelude::SeedableRng;
 use std::collections::HashMap;
-use std::f64;
 
 /// Dataset structs
 #[derive(Default, Debug, Clone, PartialEq)]
@@ -68,7 +67,6 @@ impl Points {
             (0..self.0.len())
                 .collect::<Vec<_>>()
                 .choose_multiple(&mut rng, k)
-                .into_iter()
                 .map(|i| self.0[*i].clone())
                 .collect(),
         )
@@ -90,18 +88,11 @@ pub struct Cluster {
     point_indices: Vec<usize>,
 }
 
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Default, Eq, PartialEq, Clone)]
 pub struct Clusters {
     pub cluster_map: HashMap<usize, Cluster>,
 }
 
-impl Default for Clusters {
-    fn default() -> Self {
-        Self {
-            cluster_map: HashMap::new(),
-        }
-    }
-}
 
 impl Clusters {
     pub fn get_centroids(&self, points: &Points) -> Centroids {
@@ -130,18 +121,11 @@ impl Clusters {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Centroids {
     pub centroid_map: HashMap<usize, Point>,
 }
 
-impl Default for Centroids {
-    fn default() -> Self {
-        Self {
-            centroid_map: HashMap::new(),
-        }
-    }
-}
 
 impl Centroids {
     fn get_clusters(&self, points: &Points) -> Clusters {
@@ -232,8 +216,8 @@ impl Kmeans {
     }
 
     pub fn fit_one_step(&mut self, points: &Points) {
-        self.clusters = self.centroids.get_clusters(&points);
-        self.centroids = self.clusters.get_centroids(&points);
+        self.clusters = self.centroids.get_clusters(points);
+        self.centroids = self.clusters.get_centroids(points);
     }
 
     pub fn get_clusters(&self) -> &Clusters {

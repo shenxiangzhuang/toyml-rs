@@ -7,7 +7,7 @@ use std::f64;
 pub struct Point {
     pub values: Vec<f64>,
 }
-
+ 
 impl Point {
     pub fn dim(&self) -> usize {
         self.values.len()

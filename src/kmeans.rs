@@ -1,5 +1,6 @@
 use rand::prelude::SeedableRng;
 use std::collections::HashMap;
+use pyo3::prelude::*;
 
 #[derive(Debug)]
 pub enum DistanceMetric {
@@ -43,6 +44,7 @@ impl Point {
     }
 }
 
+#[pyclass]
 #[derive(Default, Debug, PartialEq)]
 pub struct Points(pub Vec<Point>);
 
@@ -79,8 +81,9 @@ impl Points {
 }
 
 /// K-means structs
+#[pyclass]
 #[derive(Default, Debug)]
-pub struct Labels(Vec<usize>);
+pub struct Labels(pub Vec<usize>);
 
 impl Labels {
     pub fn set(&mut self, sample_index: usize, label: usize) {
@@ -88,12 +91,14 @@ impl Labels {
     }
 }
 
+#[pyclass]
 #[derive(Default, Debug, Eq, PartialEq, Clone)]
 pub struct Cluster {
-    point_indices: Vec<usize>,
+    pub point_indices: Vec<usize>,
 }
 
-#[derive(Debug, Default, Eq, PartialEq, Clone)]
+
+#[derive(Debug, Default, Eq, PartialEq, Clone, IntoPyObject)]
 pub struct Clusters {
     pub cluster_map: HashMap<usize, Cluster>,
 }
@@ -126,6 +131,7 @@ impl Clusters {
     }
 }
 
+#[pyclass]
 #[derive(Debug, Default)]
 pub struct Centroids {
     pub centroid_map: HashMap<usize, Point>,
@@ -133,7 +139,7 @@ pub struct Centroids {
 
 
 impl Centroids {
-    fn get_clusters(&self, points: &Points) -> Clusters {
+    pub fn get_clusters(&self, points: &Points) -> Clusters {
         let mut clusters = Clusters::default();
         points.0.iter().enumerate().for_each(|(index, point)| {
             clusters

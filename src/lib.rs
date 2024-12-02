@@ -1,6 +1,5 @@
 mod kmeans;
 
-use std::collections::HashMap;
 use kmeans::*;
 
 use pyo3::prelude::*;

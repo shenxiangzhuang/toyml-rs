@@ -1,7 +1,6 @@
 use rand::prelude::SeedableRng;
 use std::collections::HashMap;
 use pyo3::prelude::*;
-
 #[derive(Debug)]
 pub enum DistanceMetric {
     Euclidean
@@ -15,11 +14,13 @@ pub enum CentroidsInitMethod {
 
 
 /// Dataset structs
+#[pyclass]
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct Point {
     pub values: Vec<f64>,
 }
- 
+
+
 impl Point {
     pub fn dim(&self) -> usize {
         self.values.len()
@@ -48,7 +49,17 @@ impl Point {
 #[derive(Default, Debug, PartialEq)]
 pub struct Points(pub Vec<Point>);
 
+
+#[pymethods]
 impl Points {
+    #[new]
+    fn new(values: Vec<Vec<f64>>) -> Self {
+        Points(values.into_iter().map(|v| Point{values: v}).collect())
+    }
+}
+
+impl Points {
+
     pub fn get_init_centroids(
         &self,
         centroids_init_method: CentroidsInitMethod,
@@ -98,7 +109,8 @@ pub struct Cluster {
 }
 
 
-#[derive(Debug, Default, Eq, PartialEq, Clone, IntoPyObject)]
+#[pyclass]
+#[derive(Debug, Default, Eq, PartialEq, Clone)]
 pub struct Clusters {
     pub cluster_map: HashMap<usize, Cluster>,
 }

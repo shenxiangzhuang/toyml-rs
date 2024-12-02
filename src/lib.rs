@@ -1,8 +1,9 @@
 mod kmeans;
+
+use std::collections::HashMap;
 use kmeans::*;
 
 use pyo3::prelude::*;
-use pyo3::wrap_pymodule;
 
 /// Formats the sum of two numbers as string.
 #[pyfunction]
@@ -41,6 +42,7 @@ impl PyKmeans {
     }
     
     pub fn fit(&mut self, points: &Points) {
+        // TODO: deduplicated of code
         self.centroids =
             points.get_init_centroids(self.centroids_init_method, self.k, self.random_seed);
         let mut iter: usize = 0;
@@ -68,6 +70,11 @@ impl PyKmeans {
         self.centroids = self.clusters.get_centroids(points);
     }
 
+    #[getter]
+    fn labels(&self) -> PyResult<Vec<usize>> {
+        Ok(self.labels.0.clone())
+    }
+
 }
 
 /// A Python module implemented in Rust.
@@ -76,5 +83,6 @@ fn _toymlrs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
     let _ = m.add_class::<PyKmeans>();
+    let _ = m.add_class::<Points>();
     Ok(())
 }

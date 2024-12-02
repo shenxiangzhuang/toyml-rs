@@ -1,6 +1,18 @@
 use rand::prelude::SeedableRng;
 use std::collections::HashMap;
 
+#[derive(Debug)]
+pub enum DistanceMetric {
+    Euclidean
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum CentroidsInitMethod {
+    Random,
+    KmeansPlusPlus
+}
+
+
 /// Dataset structs
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct Point {
@@ -12,25 +24,22 @@ impl Point {
         self.values.len()
     }
 
-    pub fn distance(&self, other: &Point, distance_metric: &str) -> f64 {
+    pub fn distance(&self, other: &Point, metric: Option<DistanceMetric>) -> f64 {
         if self.values.len() != other.values.len() {
             panic!(
                 "Points with different dimensions are not supported: {:?}, {:?}",
                 self.values, other.values
             );
         }
-        match distance_metric {
-            "euclidean" => self
+        match metric {
+            None | Some(DistanceMetric::Euclidean) => self
                 .values
                 .iter()
                 .zip(other.values.iter())
                 .map(|(x, y)| (x - y).powi(2))
                 .sum::<f64>()
                 .powf(1.0 / 2.0),
-            _ => {
-                panic!("Only euclidean distance metric is supported")
             }
-        }
     }
 }
 
@@ -40,23 +49,19 @@ pub struct Points(pub Vec<Point>);
 impl Points {
     pub fn get_init_centroids(
         &self,
-        centroids_init_method: &str,
+        centroids_init_method: CentroidsInitMethod,
         k: usize,
         random_seed: usize,
     ) -> Centroids {
         match centroids_init_method {
-            "random" => Centroids {
+            CentroidsInitMethod::Random => Centroids {
                 centroid_map: HashMap::from_iter(
                     self.sample(k, random_seed).0.into_iter().enumerate(),
                 ),
             },
-            "kmeans++" => {
+            CentroidsInitMethod::KmeansPlusPlus => {
                 panic!("kmeans++ init centroids is not implemented yet");
             }
-            _ => panic!(
-                "Don't support the initialize method: {:?}!",
-                centroids_init_method
-            ),
         }
     }
 
@@ -146,7 +151,7 @@ impl Centroids {
             .centroid_map
             .iter()
             .map(|(&centroid_index, centroid_point)| {
-                (centroid_index, centroid_point.distance(point, "euclidean"))
+                (centroid_index, centroid_point.distance(point, None))
             })
             .fold(
                 (0, f64::MAX),
@@ -168,9 +173,9 @@ impl Centroids {
 pub struct Kmeans {
     pub k: usize,
     pub max_iter: usize,
-    pub centroids_init_method: &'static str,
+    pub centroids_init_method: CentroidsInitMethod,
     pub random_seed: usize,
-    pub distance_metric: &'static str,
+    pub distance_metric: DistanceMetric,
     clusters: Clusters,
     centroids: Centroids,
     labels: Labels,
@@ -181,9 +186,9 @@ impl Default for Kmeans {
         Kmeans {
             k: 2,
             max_iter: 500,
-            centroids_init_method: "random",
+            centroids_init_method: CentroidsInitMethod::Random,
             random_seed: 42,
-            distance_metric: "euclidean",
+            distance_metric: DistanceMetric::Euclidean,
             clusters: Clusters::default(),
             centroids: Centroids::default(),
             labels: Labels::default(),
@@ -275,7 +280,7 @@ mod tests {
     #[test]
     fn test_dataset_get_init_centroids() {
         let dataset = create_test_points();
-        let centroids = dataset.get_init_centroids("random", 2, 42);
+        let centroids = dataset.get_init_centroids(CentroidsInitMethod::Random, 2, 42);
 
         assert_eq!(centroids.centroid_map.len(), 2);
         for (_, centroid) in centroids.centroid_map.iter() {
@@ -302,7 +307,7 @@ mod tests {
         let p2 = Point {
             values: vec![4.0, 5.0, 6.0],
         };
-        assert_eq!(p1.distance(&p2, "euclidean"), 5.196152422706632);
+        assert_eq!(p1.distance(&p2, Some(DistanceMetric::Euclidean)), 5.196152422706632);
     }
 
     #[test]
@@ -314,20 +319,9 @@ mod tests {
         let p2 = Point {
             values: vec![4.0, 5.0, 6.0],
         };
-        p1.distance(&p2, "euclidean");
+        p1.distance(&p2, Some(DistanceMetric::Euclidean));
     }
 
-    #[test]
-    #[should_panic(expected = "Only euclidean distance metric is supported")]
-    fn test_point_distance_unsupported_metric() {
-        let p1 = Point {
-            values: vec![1.0, 2.0],
-        };
-        let p2 = Point {
-            values: vec![4.0, 5.0],
-        };
-        p1.distance(&p2, "manhattan");
-    }
 
     #[test]
     fn test_clusters_get_centroids() {

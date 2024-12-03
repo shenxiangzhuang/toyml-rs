@@ -1,6 +1,5 @@
 mod kmeans;
 
-use crate::kmeans::*;
 use kmeans::Kmeans;
 
 fn main() {

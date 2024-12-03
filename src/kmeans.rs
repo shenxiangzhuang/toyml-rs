@@ -14,7 +14,6 @@ pub enum CentroidsInitMethod {
 }
 
 /// Dataset structs
-#[pyclass]
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct Point {
     pub values: Vec<f64>,
@@ -44,7 +43,6 @@ impl Point {
     }
 }
 
-#[pyclass]
 #[derive(Default, Debug, PartialEq)]
 pub struct Points(pub Vec<Point>);
 
@@ -92,13 +90,11 @@ impl Labels {
     }
 }
 
-#[pyclass]
 #[derive(Default, Debug, Eq, PartialEq, Clone)]
 pub struct Cluster {
     pub point_indices: Vec<usize>,
 }
 
-#[pyclass]
 #[derive(Debug, Default, Eq, PartialEq, Clone)]
 pub struct Clusters {
     pub cluster_map: HashMap<usize, Cluster>,
@@ -131,7 +127,6 @@ impl Clusters {
     }
 }
 
-#[pyclass]
 #[derive(Debug, Default)]
 pub struct Centroids {
     pub centroid_map: HashMap<usize, Point>,
@@ -202,13 +197,32 @@ impl Default for Kmeans {
     }
 }
 
+
+impl Kmeans {
+    pub fn fit_one_step(&mut self, points: &Points) {
+        self.clusters = self.centroids.get_clusters(points);
+        self.centroids = self.clusters.get_centroids(points);
+    }
+    pub fn get_clusters(&self) -> &Clusters {
+        &self.clusters
+    }
+
+    pub fn get_centroids(&self) -> &Centroids {
+        &self.centroids
+    }
+
+    pub fn get_labels(&self) -> &Labels {
+        &self.labels
+    }
+}
+
 #[pymethods]
 impl Kmeans {
     #[new]
-    fn py_new(k: usize) -> PyResult<Self> {
+    fn py_new(k: usize, max_iter: usize) -> PyResult<Self> {
         Ok(Kmeans {
             k,
-            max_iter: 100,
+            max_iter,
             centroids_init_method: CentroidsInitMethod::Random,
             random_seed: rand::random::<usize>(),
             distance_metric: DistanceMetric::Euclidean,
@@ -242,31 +256,17 @@ impl Kmeans {
         }
     }
 
-    pub fn fit_one_step(&mut self, points: &Points) {
-        self.clusters = self.centroids.get_clusters(points);
-        self.centroids = self.clusters.get_centroids(points);
+    pub fn fit_predict(&mut self, point_values: Vec<Vec<f64>>) -> PyResult<Vec<usize>> {
+        self.fit(point_values);
+        self.labels()
     }
-
+    
     #[getter]
     fn labels(&self) -> PyResult<Vec<usize>> {
         Ok(self.labels.0.clone())
     }
 }
 
-impl Kmeans {
-
-    pub fn get_clusters(&self) -> &Clusters {
-        &self.clusters
-    }
-
-    pub fn get_centroids(&self) -> &Centroids {
-        &self.centroids
-    }
-
-    pub fn get_labels(&self) -> &Labels {
-        &self.labels
-    }
-}
 
 #[cfg(test)]
 mod tests {

@@ -11,7 +11,7 @@ fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
 }
 
 
-#[pyclass]
+#[pyclass(name="Kmeans")]
 struct PyKmeans {
     pub k: usize,
     pub max_iter: usize,
@@ -40,7 +40,8 @@ impl PyKmeans {
         })
     }
     
-    pub fn fit(&mut self, points: &Points) {
+    pub fn fit(&mut self, point_values: Vec<Vec<f64>>) {
+        let points = &Points(point_values.into_iter().map(|v| Point{values: v}).collect());
         // TODO: deduplicated of code
         self.centroids =
             points.get_init_centroids(self.centroids_init_method, self.k, self.random_seed);
@@ -82,6 +83,5 @@ fn _toymlrs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
     let _ = m.add_class::<PyKmeans>();
-    let _ = m.add_class::<Points>();
     Ok(())
 }

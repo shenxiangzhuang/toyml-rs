@@ -178,6 +178,7 @@ impl Centroids {
     }
 }
 
+#[pyclass(name="KmeansRust")]
 #[derive(Debug)]
 pub struct Kmeans {
     pub k: usize,
@@ -189,6 +190,7 @@ pub struct Kmeans {
     centroids: Centroids,
     labels: Labels,
 }
+
 
 impl Default for Kmeans {
     fn default() -> Self {
@@ -205,8 +207,24 @@ impl Default for Kmeans {
     }
 }
 
+#[pymethods]
 impl Kmeans {
-    pub fn fit(&mut self, points: &Points) {
+    #[new]
+    fn py_new(k: usize) -> PyResult<Self> {
+        Ok(Kmeans {
+            k,
+            max_iter: 100,
+            centroids_init_method: CentroidsInitMethod::Random,
+            random_seed: rand::random::<usize>(),
+            distance_metric: DistanceMetric::Euclidean,
+            clusters: Clusters::default(),
+            centroids: Centroids::default(),
+            labels: Labels::default(),
+        })
+    }
+    
+    pub fn fit(&mut self, point_values: Vec<Vec<f64>>) {
+        let points = &Points(point_values.into_iter().map(|v| Point{values: v}).collect());
         self.centroids =
             points.get_init_centroids(self.centroids_init_method, self.k, self.random_seed);
         let mut iter: usize = 0;
@@ -234,17 +252,22 @@ impl Kmeans {
         self.centroids = self.clusters.get_centroids(points);
     }
 
-    pub fn get_clusters(&self) -> &Clusters {
-        &self.clusters
+    #[getter]
+    fn labels(&self) -> PyResult<Vec<usize>> {
+        Ok(self.labels.0.clone())
     }
-
-    pub fn get_centroids(&self) -> &Centroids {
-        &self.centroids
-    }
-
-    pub fn get_labels(&self) -> &Labels {
-        &self.labels
-    }
+    
+    // pub fn get_clusters(&self) -> &Clusters {
+    //     &self.clusters
+    // }
+    // 
+    // pub fn get_centroids(&self) -> &Centroids {
+    //     &self.centroids
+    // }
+    // 
+    // pub fn get_labels(&self) -> &Labels {
+    //     &self.labels
+    // }
 }
 
 #[cfg(test)]

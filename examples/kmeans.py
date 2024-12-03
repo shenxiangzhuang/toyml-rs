@@ -1,9 +1,9 @@
-from toymlrs import Kmeans
+from toymlrs import KmeansRust
 
 
 def run():
-    xs = [[1], [1], [10], [10]]
-    kmeans = Kmeans(k=2)
+    xs = [[0], [0], [10], [10]]
+    kmeans = KmeansRust(k=2)
     kmeans.fit(xs)
     print(kmeans.labels)
 

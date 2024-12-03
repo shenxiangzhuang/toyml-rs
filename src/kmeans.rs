@@ -1,5 +1,6 @@
 use pyo3::prelude::*;
 use rand::prelude::SeedableRng;
+use rand::seq::SliceRandom;
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -51,7 +52,7 @@ impl Points {
         &self,
         centroids_init_method: CentroidsInitMethod,
         k: usize,
-        random_seed: usize,
+        random_seed: u64,
     ) -> Centroids {
         match centroids_init_method {
             CentroidsInitMethod::Random => Centroids {
@@ -65,9 +66,8 @@ impl Points {
         }
     }
 
-    fn sample(&self, k: usize, random_seed: usize) -> Points {
-        use rand::seq::SliceRandom;
-        let mut rng = rand::rngs::StdRng::seed_from_u64(random_seed as u64);
+    fn sample(&self, k: usize, random_seed: u64) -> Points {
+        let mut rng = rand::rngs::StdRng::seed_from_u64(random_seed);
         Points(
             (0..self.0.len())
                 .collect::<Vec<_>>()
@@ -174,7 +174,7 @@ pub struct Kmeans {
     pub k: usize,
     pub max_iter: usize,
     pub centroids_init_method: CentroidsInitMethod,
-    pub random_seed: usize,
+    pub random_seed: u64,
     pub distance_metric: DistanceMetric,
     clusters: Clusters,
     centroids: Centroids,
@@ -222,7 +222,7 @@ impl Kmeans {
             k,
             max_iter,
             centroids_init_method: CentroidsInitMethod::Random,
-            random_seed: rand::random::<usize>(),
+            random_seed: rand::random::<u64>(),
             distance_metric: DistanceMetric::Euclidean,
             clusters: Clusters::default(),
             centroids: Centroids::default(),

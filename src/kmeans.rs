@@ -1,6 +1,7 @@
 use rand::prelude::SeedableRng;
 use std::collections::HashMap;
 use pyo3::prelude::*;
+
 #[derive(Debug)]
 pub enum DistanceMetric {
     Euclidean
@@ -12,14 +13,12 @@ pub enum CentroidsInitMethod {
     KmeansPlusPlus
 }
 
-
 /// Dataset structs
 #[pyclass]
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct Point {
     pub values: Vec<f64>,
 }
-
 
 impl Point {
     pub fn dim(&self) -> usize {
@@ -41,7 +40,7 @@ impl Point {
                 .map(|(x, y)| (x - y).powi(2))
                 .sum::<f64>()
                 .powf(1.0 / 2.0),
-            }
+        }
     }
 }
 
@@ -99,13 +98,11 @@ pub struct Cluster {
     pub point_indices: Vec<usize>,
 }
 
-
 #[pyclass]
 #[derive(Debug, Default, Eq, PartialEq, Clone)]
 pub struct Clusters {
     pub cluster_map: HashMap<usize, Cluster>,
 }
-
 
 impl Clusters {
     pub fn get_centroids(&self, points: &Points) -> Centroids {
@@ -139,7 +136,6 @@ impl Clusters {
 pub struct Centroids {
     pub centroid_map: HashMap<usize, Point>,
 }
-
 
 impl Centroids {
     pub fn get_clusters(&self, points: &Points) -> Clusters {
@@ -191,7 +187,6 @@ pub struct Kmeans {
     labels: Labels,
 }
 
-
 impl Default for Kmeans {
     fn default() -> Self {
         Kmeans {
@@ -222,7 +217,7 @@ impl Kmeans {
             labels: Labels::default(),
         })
     }
-    
+
     pub fn fit(&mut self, point_values: Vec<Vec<f64>>) {
         let points = &Points(point_values.into_iter().map(|v| Point{values: v}).collect());
         self.centroids =
@@ -256,45 +251,36 @@ impl Kmeans {
     fn labels(&self) -> PyResult<Vec<usize>> {
         Ok(self.labels.0.clone())
     }
-    
-    // pub fn get_clusters(&self) -> &Clusters {
-    //     &self.clusters
-    // }
-    // 
-    // pub fn get_centroids(&self) -> &Centroids {
-    //     &self.centroids
-    // }
-    // 
-    // pub fn get_labels(&self) -> &Labels {
-    //     &self.labels
-    // }
+}
+
+impl Kmeans {
+
+    pub fn get_clusters(&self) -> &Clusters {
+        &self.clusters
+    }
+
+    pub fn get_centroids(&self) -> &Centroids {
+        &self.centroids
+    }
+
+    pub fn get_labels(&self) -> &Labels {
+        &self.labels
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn create_test_points() -> Points {
-        Points(vec![
-            Point {
-                values: vec![1.0, 0.0],
-            },
-            Point {
-                values: vec![1.0, 1.0],
-            },
-            Point {
-                values: vec![1.0, 2.0],
-            },
-            Point {
-                values: vec![10.0, 0.0],
-            },
-            Point {
-                values: vec![10.0, 1.0],
-            },
-            Point {
-                values: vec![10.0, 2.0],
-            },
-        ])
+    fn create_test_points() -> Vec<Vec<f64>> {
+        vec![
+            vec![1.0, 0.0],
+            vec![1.0, 1.0],
+            vec![1.0, 2.0],
+            vec![10.0, 0.0],
+            vec![10.0, 1.0],
+            vec![10.0, 2.0],
+        ]
     }
 
     #[test]
@@ -305,13 +291,14 @@ mod tests {
             ..Default::default()
         };
         let dataset = create_test_points();
-        kmeans.fit(&dataset);
+        kmeans.fit(dataset);
         assert_eq!(kmeans.centroids.centroid_map.len(), 2);
     }
 
     #[test]
     fn test_dataset_get_init_centroids() {
-        let dataset = create_test_points();
+        let point_values = create_test_points();
+        let dataset = Points(point_values.into_iter().map(|v| Point{values: v}).collect());
         let centroids = dataset.get_init_centroids(CentroidsInitMethod::Random, 2, 42);
 
         assert_eq!(centroids.centroid_map.len(), 2);
@@ -322,7 +309,8 @@ mod tests {
 
     #[test]
     fn test_dataset_sample() {
-        let dataset = create_test_points();
+        let points_values = create_test_points();
+        let dataset = Points(points_values.into_iter().map(|v| Point{values: v}).collect());
         let sampled = dataset.sample(2, 42);
 
         assert_eq!(sampled.0.len(), 2);
@@ -353,7 +341,6 @@ mod tests {
         };
         p1.distance(&p2, Some(DistanceMetric::Euclidean));
     }
-
 
     #[test]
     fn test_clusters_get_centroids() {
@@ -431,7 +418,7 @@ mod tests {
             ..Default::default()
         };
         let dataset = create_test_points();
-        kmeans.fit(&dataset);
+        kmeans.fit(dataset);
 
         // Check if the clusters are as expected
         let clusters = kmeans.get_clusters();

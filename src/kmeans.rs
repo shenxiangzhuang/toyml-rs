@@ -49,15 +49,6 @@ impl Point {
 #[derive(Default, Debug, PartialEq)]
 pub struct Points(pub Vec<Point>);
 
-
-#[pymethods]
-impl Points {
-    #[new]
-    fn new(values: Vec<Vec<f64>>) -> Self {
-        Points(values.into_iter().map(|v| Point{values: v}).collect())
-    }
-}
-
 impl Points {
 
     pub fn get_init_centroids(

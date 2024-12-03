@@ -1,16 +1,16 @@
+use pyo3::prelude::*;
 use rand::prelude::SeedableRng;
 use std::collections::HashMap;
-use pyo3::prelude::*;
 
 #[derive(Debug)]
 pub enum DistanceMetric {
-    Euclidean
+    Euclidean,
 }
 
 #[derive(Debug, Copy, Clone)]
 pub enum CentroidsInitMethod {
     Random,
-    KmeansPlusPlus
+    KmeansPlusPlus,
 }
 
 /// Dataset structs
@@ -47,7 +47,6 @@ impl Point {
 pub struct Points(pub Vec<Point>);
 
 impl Points {
-
     pub fn get_init_centroids(
         &self,
         centroids_init_method: CentroidsInitMethod,
@@ -169,7 +168,7 @@ impl Centroids {
     }
 }
 
-#[pyclass(name="KmeansRust")]
+#[pyclass(name = "KmeansRust")]
 #[derive(Debug)]
 pub struct Kmeans {
     pub k: usize,
@@ -196,7 +195,6 @@ impl Default for Kmeans {
         }
     }
 }
-
 
 impl Kmeans {
     pub fn fit_one_step(&mut self, points: &Points) {
@@ -233,7 +231,12 @@ impl Kmeans {
     }
 
     pub fn fit(&mut self, point_values: Vec<Vec<f64>>) {
-        let points = &Points(point_values.into_iter().map(|v| Point{values: v}).collect());
+        let points = &Points(
+            point_values
+                .into_iter()
+                .map(|v| Point { values: v })
+                .collect(),
+        );
         self.centroids =
             points.get_init_centroids(self.centroids_init_method, self.k, self.random_seed);
         let mut iter: usize = 0;
@@ -260,13 +263,12 @@ impl Kmeans {
         self.fit(point_values);
         self.labels()
     }
-    
+
     #[getter]
     fn labels(&self) -> PyResult<Vec<usize>> {
         Ok(self.labels.0.clone())
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -298,7 +300,12 @@ mod tests {
     #[test]
     fn test_dataset_get_init_centroids() {
         let point_values = create_test_points();
-        let dataset = Points(point_values.into_iter().map(|v| Point{values: v}).collect());
+        let dataset = Points(
+            point_values
+                .into_iter()
+                .map(|v| Point { values: v })
+                .collect(),
+        );
         let centroids = dataset.get_init_centroids(CentroidsInitMethod::Random, 2, 42);
 
         assert_eq!(centroids.centroid_map.len(), 2);
@@ -310,7 +317,12 @@ mod tests {
     #[test]
     fn test_dataset_sample() {
         let points_values = create_test_points();
-        let dataset = Points(points_values.into_iter().map(|v| Point{values: v}).collect());
+        let dataset = Points(
+            points_values
+                .into_iter()
+                .map(|v| Point { values: v })
+                .collect(),
+        );
         let sampled = dataset.sample(2, 42);
 
         assert_eq!(sampled.0.len(), 2);
@@ -327,7 +339,10 @@ mod tests {
         let p2 = Point {
             values: vec![4.0, 5.0, 6.0],
         };
-        assert_eq!(p1.distance(&p2, Some(DistanceMetric::Euclidean)), 5.196152422706632);
+        assert_eq!(
+            p1.distance(&p2, Some(DistanceMetric::Euclidean)),
+            5.196152422706632
+        );
     }
 
     #[test]

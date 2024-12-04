@@ -1,4 +1,3 @@
-use pyo3::prelude::*;
 use rand::prelude::SeedableRng;
 use rand::seq::SliceRandom;
 use std::collections::HashMap;
@@ -79,7 +78,6 @@ impl Points {
 }
 
 /// K-means structs
-#[pyclass]
 #[derive(Default, Debug)]
 pub struct Labels(pub Vec<usize>);
 
@@ -168,7 +166,6 @@ impl Centroids {
     }
 }
 
-#[pyclass(name = "KmeansRust")]
 #[derive(Debug)]
 pub struct Kmeans {
     pub k: usize,
@@ -197,39 +194,10 @@ impl Default for Kmeans {
 }
 
 impl Kmeans {
-    pub fn fit_one_step(&mut self, points: &Points) {
-        self.clusters = self.centroids.get_clusters(points);
-        self.centroids = self.clusters.get_centroids(points);
+    pub fn new(k: usize, max_iter: usize) -> Self {
+        Kmeans{k, max_iter, ..Kmeans::default()}
     }
-    pub fn get_clusters(&self) -> &Clusters {
-        &self.clusters
-    }
-
-    pub fn get_centroids(&self) -> &Centroids {
-        &self.centroids
-    }
-
-    pub fn get_labels(&self) -> &Labels {
-        &self.labels
-    }
-}
-
-#[pymethods]
-impl Kmeans {
-    #[new]
-    fn py_new(k: usize, max_iter: usize) -> PyResult<Self> {
-        Ok(Kmeans {
-            k,
-            max_iter,
-            centroids_init_method: CentroidsInitMethod::Random,
-            random_seed: rand::random::<u64>(),
-            distance_metric: DistanceMetric::Euclidean,
-            clusters: Clusters::default(),
-            centroids: Centroids::default(),
-            labels: Labels::default(),
-        })
-    }
-
+    
     pub fn fit(&mut self, point_values: Vec<Vec<f64>>) {
         let points = &Points(
             point_values
@@ -259,14 +227,24 @@ impl Kmeans {
         }
     }
 
-    pub fn fit_predict(&mut self, point_values: Vec<Vec<f64>>) -> PyResult<Vec<usize>> {
+    pub fn fit_predict(&mut self, point_values: Vec<Vec<f64>>) -> &Labels {
         self.fit(point_values);
-        self.labels()
+        &self.labels
+    }
+    pub fn fit_one_step(&mut self, points: &Points) {
+        self.clusters = self.centroids.get_clusters(points);
+        self.centroids = self.clusters.get_centroids(points);
+    }
+    pub fn get_clusters(&self) -> &Clusters {
+        &self.clusters
     }
 
-    #[getter]
-    fn labels(&self) -> PyResult<Vec<usize>> {
-        Ok(self.labels.0.clone())
+    pub fn get_centroids(&self) -> &Centroids {
+        &self.centroids
+    }
+
+    pub fn get_labels(&self) -> &Labels {
+        &self.labels
     }
 }
 

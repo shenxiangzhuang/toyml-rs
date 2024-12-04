@@ -1,10 +1,22 @@
 use rand::prelude::SeedableRng;
 use rand::seq::SliceRandom;
 use std::collections::HashMap;
+use std::str::FromStr;
+use rand::random;
 
 #[derive(Debug)]
 pub enum DistanceMetric {
     Euclidean,
+}
+
+impl FromStr for DistanceMetric {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s { 
+            "euclidean" => Ok(DistanceMetric::Euclidean),
+            _ => Err(()),
+        }
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -12,6 +24,18 @@ pub enum CentroidsInitMethod {
     Random,
     KmeansPlusPlus,
 }
+
+impl FromStr for CentroidsInitMethod {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s { 
+            "random" => Ok(CentroidsInitMethod::Random),
+            "kmeans++" => Ok(CentroidsInitMethod::KmeansPlusPlus),
+            _ => Err(()),
+        }
+    }
+}
+
 
 /// Dataset structs
 #[derive(Default, Debug, Clone, PartialEq)]
@@ -51,7 +75,7 @@ impl Points {
         &self,
         centroids_init_method: CentroidsInitMethod,
         k: usize,
-        random_seed: u64,
+        random_seed: Option<u64>,
     ) -> Centroids {
         match centroids_init_method {
             CentroidsInitMethod::Random => Centroids {
@@ -65,8 +89,8 @@ impl Points {
         }
     }
 
-    fn sample(&self, k: usize, random_seed: u64) -> Points {
-        let mut rng = rand::rngs::StdRng::seed_from_u64(random_seed);
+    fn sample(&self, k: usize, random_seed: Option<u64>) -> Points {
+        let mut rng = rand::rngs::StdRng::seed_from_u64(random_seed.unwrap_or(random::<u64>()));
         Points(
             (0..self.0.len())
                 .collect::<Vec<_>>()
@@ -171,7 +195,7 @@ pub struct Kmeans {
     pub k: usize,
     pub max_iter: usize,
     pub centroids_init_method: CentroidsInitMethod,
-    pub random_seed: u64,
+    pub random_seed: Option<u64>,
     pub distance_metric: DistanceMetric,
     clusters: Clusters,
     centroids: Centroids,
@@ -184,8 +208,8 @@ impl Default for Kmeans {
             k: 2,
             max_iter: 500,
             centroids_init_method: CentroidsInitMethod::Random,
-            random_seed: 42,
             distance_metric: DistanceMetric::Euclidean,
+            random_seed: None,
             clusters: Clusters::default(),
             centroids: Centroids::default(),
             labels: Labels::default(),
@@ -194,8 +218,13 @@ impl Default for Kmeans {
 }
 
 impl Kmeans {
-    pub fn new(k: usize, max_iter: usize) -> Self {
-        Kmeans{k, max_iter, ..Kmeans::default()}
+    pub fn new(k: usize, 
+               max_iter: usize, 
+               centroids_init_method: CentroidsInitMethod,
+               distance_metric: DistanceMetric,
+               random_seed: Option<u64>,
+    ) -> Self {
+        Kmeans{k, max_iter, centroids_init_method, distance_metric, random_seed, ..Kmeans::default()}
     }
     
     pub fn fit(&mut self, point_values: Vec<Vec<f64>>) {

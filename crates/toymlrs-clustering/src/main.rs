@@ -1,6 +1,5 @@
-mod kmeans;
 
-use kmeans::Kmeans;
+use toymlrs_clustering::kmeans::Kmeans;
 
 fn main() {
     let points = vec![

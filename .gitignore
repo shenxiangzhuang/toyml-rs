@@ -70,3 +70,10 @@ docs/_build/
 
 # Pyenv
 .python-version
+
+
+# Added by cargo
+#
+# already existing elements were commented out
+
+#/target

@@ -43,6 +43,7 @@ jobs:
           python-version: 3.x
       - name: Build wheels
         uses: PyO3/maturin-action@v1
+        working-directory: bindings/python
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
@@ -74,6 +75,7 @@ jobs:
           python-version: 3.x
       - name: Build wheels
         uses: PyO3/maturin-action@v1
+        working-directory: bindings/python
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
@@ -102,6 +104,7 @@ jobs:
           architecture: ${{ matrix.platform.target }}
       - name: Build wheels
         uses: PyO3/maturin-action@v1
+        working-directory: bindings/python
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
@@ -128,6 +131,7 @@ jobs:
           python-version: 3.x
       - name: Build wheels
         uses: PyO3/maturin-action@v1
+        working-directory: bindings/python
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
@@ -144,6 +148,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build sdist
         uses: PyO3/maturin-action@v1
+        working-directory: bindings/python
         with:
           command: sdist
           args: --out dist
@@ -162,6 +167,7 @@ jobs:
       - uses: actions/download-artifact@v4
       - name: Publish to PyPI
         uses: PyO3/maturin-action@v1
+        working-directory: bindings/python
         env:
           MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         with:

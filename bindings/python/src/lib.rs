@@ -1,6 +1,5 @@
-mod kmeans;
 
-use kmeans::*;
+use toymlrs_clustering::kmeans::*;
 
 use pyo3::prelude::*;
 

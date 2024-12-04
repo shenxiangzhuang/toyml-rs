@@ -9,7 +9,7 @@ name = "toymlrs"
 crate-type = ["cdylib"]
 
 [dependencies]
-rand = "0.8.4"
+toymlrs-clustering = { version = ">=0", path = "../../crates/toymlrs-clustering"}
 
 [dependencies.pyo3]
 version = "0.23.2"

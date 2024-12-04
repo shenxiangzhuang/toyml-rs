@@ -1,10 +1,7 @@
-[workerspace]
-members = ["crates/*", "bindings/python/*"]
-
-
-[package]
-name = "toymlrs"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
+[workspace]
+members = [
+    "crates/*",
+]
+exclude = [
+    "bindings/python",
+]

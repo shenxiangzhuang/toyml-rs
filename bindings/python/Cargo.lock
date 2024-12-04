@@ -212,6 +212,14 @@ name = "toymlrs"
 version = "0.0.1"
 dependencies = [
  "pyo3",
+ "toymlrs-clustering",
+]
+
+[[package]]
+name = "toymlrs-clustering"
+version = "0.1.0"
+dependencies = [
+ "pyo3",
  "rand",
 ]
 

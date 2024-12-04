@@ -313,7 +313,7 @@ mod tests {
                 .map(|v| Point { values: v })
                 .collect(),
         );
-        let centroids = dataset.get_init_centroids(CentroidsInitMethod::Random, 2, 42);
+        let centroids = dataset.get_init_centroids(CentroidsInitMethod::Random, 2, Some(42));
 
         assert_eq!(centroids.centroid_map.len(), 2);
         for (_, centroid) in centroids.centroid_map.iter() {
@@ -330,7 +330,7 @@ mod tests {
                 .map(|v| Point { values: v })
                 .collect(),
         );
-        let sampled = dataset.sample(2, 42);
+        let sampled = dataset.sample(2, Some(42));
 
         assert_eq!(sampled.0.len(), 2);
         for point in sampled.0.iter() {

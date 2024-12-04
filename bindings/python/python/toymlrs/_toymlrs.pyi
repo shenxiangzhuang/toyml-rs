@@ -1,3 +1,5 @@
+from typing import Optional
+
 __version__: str = ...
 """The version of Toyml-RS."""
 
@@ -10,7 +12,11 @@ def sum_as_string(
 
 
 class Kmeans:
-    def __init__(self, k: int, max_iter: int) -> None: ...
+    def __init__(self, k: int, max_iter: int,
+                 centroids_init_method: str = "random",
+                 distance_metric: str = "euclidean",
+                 random_seed: Optional[int] = None,
+                 ) -> None: ...
     def fit(self, point_values: list[list[float]]) -> None: ...
     def fit_predict(self, point_values: list[list[float]]) -> list[int]: ...
     @property

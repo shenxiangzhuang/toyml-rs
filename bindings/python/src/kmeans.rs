@@ -9,9 +9,26 @@ pub struct Kmeans {
 #[pymethods]
 impl Kmeans {
     #[new]
-    fn py_new(k: usize, max_iter: usize) -> PyResult<Self> {
+    #[pyo3(signature = (k, max_iter, centroids_init_method="random", distance_metric="euclidean", random_seed=None))]
+    fn py_new(
+        k: usize,
+        max_iter: usize,
+        centroids_init_method: &str,
+        distance_metric: &str,
+        random_seed: Option<u64>,
+    ) -> PyResult<Self> {
         Ok(Kmeans {
-            inner: toymlrs_clustering::kmeans::Kmeans::new(k, max_iter)
+            inner: toymlrs_clustering::kmeans::Kmeans::new(
+                k,
+                max_iter,
+                centroids_init_method
+                    .parse()
+                    .expect("Centroids method should be random or kmeans++"),
+                distance_metric
+                    .parse()
+                    .expect("Distance method should be euclidean"),
+                random_seed,
+            ),
         })
     }
 

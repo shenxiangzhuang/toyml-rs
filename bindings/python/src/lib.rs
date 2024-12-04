@@ -9,7 +9,6 @@ fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
     Ok((a + b).to_string())
 }
 
-
 /// A Python module implemented in Rust.
 #[pymodule]
 fn _toymlrs(m: &Bound<'_, PyModule>) -> PyResult<()> {

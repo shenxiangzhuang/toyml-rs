@@ -1,3 +1,6 @@
+mod kmeans;
+use kmeans::Kmeans;
+
 use pyo3::prelude::*;
 
 /// Formats the sum of two numbers as string.
@@ -11,5 +14,6 @@ fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
 fn _toymlrs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
+    let _ = m.add_class::<Kmeans>();
     Ok(())
 }

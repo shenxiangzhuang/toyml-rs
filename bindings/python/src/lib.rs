@@ -1,5 +1,4 @@
-mod kmeans;
-use kmeans::Kmeans;
+pub mod clustering;
 
 use pyo3::prelude::*;
 
@@ -17,7 +16,7 @@ fn _toymlrs(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
     // Create the clustering submodule
     let clustering_module = PyModule::new(m.py(), "clustering")?;
-    let _ = clustering_module.add_class::<Kmeans>();
+    let _ = clustering_module.add_class::<clustering::kmeans::Kmeans>();
     m.add_submodule(&clustering_module)?;
     m.py()
         .import("sys")?

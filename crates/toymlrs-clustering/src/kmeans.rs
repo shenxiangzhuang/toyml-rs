@@ -91,13 +91,7 @@ impl Points {
 
     fn sample(&self, k: usize, random_seed: Option<u64>) -> Points {
         let mut rng = rand::rngs::StdRng::seed_from_u64(random_seed.unwrap_or(random::<u64>()));
-        Points(
-            (0..self.0.len())
-                .collect::<Vec<_>>()
-                .choose_multiple(&mut rng, k)
-                .map(|i| self.0[*i].clone())
-                .collect(),
-        )
+        Points(self.0.choose_multiple(&mut rng, k).cloned().collect())
     }
 }
 

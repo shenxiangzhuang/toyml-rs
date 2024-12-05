@@ -14,6 +14,15 @@ fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
 fn _toymlrs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
-    let _ = m.add_class::<Kmeans>();
+
+    // Create the clustering submodule
+    let clustering_module = PyModule::new(m.py(), "clustering")?;
+    let _ = clustering_module.add_class::<Kmeans>();
+    m.add_submodule(&clustering_module)?;
+    m.py()
+        .import("sys")?
+        .getattr("modules")?
+        .set_item("toymlrs.clustering", clustering_module)?;
+
     Ok(())
 }

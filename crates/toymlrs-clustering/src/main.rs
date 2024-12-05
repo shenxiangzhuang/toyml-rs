@@ -1,5 +1,4 @@
-
-use toymlrs_clustering::kmeans::Kmeans;
+use toymlrs_clustering::kmeans::{CentroidsInitMethod, Kmeans};
 
 fn main() {
     let points = vec![
@@ -11,6 +10,7 @@ fn main() {
         vec![10.0, 2.0],
     ];
     let mut kmeans = Kmeans::default();
+    kmeans.centroids_init_method = CentroidsInitMethod::KmeansPlusPlus;
     kmeans.fit(points);
     println!("Clusters: {:?}", kmeans.get_labels());
 }

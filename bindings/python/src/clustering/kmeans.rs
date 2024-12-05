@@ -42,7 +42,7 @@ impl Kmeans {
     }
 
     #[getter]
-    fn labels(&self) -> PyResult<Vec<usize>> {
+    pub fn labels(&self) -> PyResult<Vec<usize>> {
         Ok(self.inner.get_labels().0.clone())
     }
 }

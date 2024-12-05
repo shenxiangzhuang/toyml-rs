@@ -1,15 +1,5 @@
 from typing import Optional
 
-__version__: str = ...
-"""The version of Toyml-RS."""
-
-__all__: list[str] = ...
-
-def sum_as_string(
-        a: int,
-        b: int,
-) -> str: ...
-
 
 class Kmeans:
     def __init__(self, k: int, max_iter: int,
@@ -21,3 +11,8 @@ class Kmeans:
     def fit_predict(self, point_values: list[list[float]]) -> list[int]: ...
     @property
     def labels(self) -> list[int]: ...
+
+
+__all__ = [
+    "Kmeans",
+]

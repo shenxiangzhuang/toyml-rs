@@ -1,4 +1,4 @@
-from toymlrs import Kmeans
+from toymlrs.clustering import Kmeans
 
 
 def run():

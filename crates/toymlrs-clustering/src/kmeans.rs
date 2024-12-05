@@ -1,8 +1,8 @@
 use rand::prelude::SeedableRng;
+use rand::random;
 use rand::seq::SliceRandom;
 use std::collections::HashMap;
 use std::str::FromStr;
-use rand::random;
 
 #[derive(Debug)]
 pub enum DistanceMetric {
@@ -12,7 +12,7 @@ pub enum DistanceMetric {
 impl FromStr for DistanceMetric {
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s { 
+        match s {
             "euclidean" => Ok(DistanceMetric::Euclidean),
             _ => Err(()),
         }
@@ -28,14 +28,13 @@ pub enum CentroidsInitMethod {
 impl FromStr for CentroidsInitMethod {
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s { 
+        match s {
             "random" => Ok(CentroidsInitMethod::Random),
             "kmeans++" => Ok(CentroidsInitMethod::KmeansPlusPlus),
             _ => Err(()),
         }
     }
 }
-
 
 /// Dataset structs
 #[derive(Default, Debug, Clone, PartialEq)]
@@ -78,26 +77,46 @@ impl Points {
         random_seed: Option<u64>,
     ) -> Centroids {
         match centroids_init_method {
-            CentroidsInitMethod::Random => Centroids {
-                centroid_map: HashMap::from_iter(
-                    self.sample(k, random_seed).0.into_iter().enumerate(),
-                ),
-            },
+            CentroidsInitMethod::Random => self.get_random_init_centroids(k, random_seed),
             CentroidsInitMethod::KmeansPlusPlus => {
-                panic!("kmeans++ init centroids is not implemented yet");
+                self.get_kmeans_plus_init_centroids(k, random_seed)
             }
         }
     }
 
-    fn sample(&self, k: usize, random_seed: Option<u64>) -> Points {
+    fn get_random_init_centroids(&self, k: usize, random_seed: Option<u64>) -> Centroids {
         let mut rng = rand::rngs::StdRng::seed_from_u64(random_seed.unwrap_or(random::<u64>()));
-        Points(
-            (0..self.0.len())
-                .collect::<Vec<_>>()
-                .choose_multiple(&mut rng, k)
-                .map(|i| self.0[*i].clone())
-                .collect(),
-        )
+        let random_points = Points(self.0.choose_multiple(&mut rng, k).cloned().collect());
+        Centroids {
+            centroid_map: HashMap::from_iter(random_points.0.into_iter().enumerate()),
+        }
+    }
+
+    fn get_kmeans_plus_init_centroids(&self, k: usize, random_seed: Option<u64>) -> Centroids {
+        let mut rng = rand::rngs::StdRng::seed_from_u64(random_seed.unwrap_or(random::<u64>()));
+        let mut centroids = Centroids::default();
+        centroids
+            .centroid_map
+            .insert(0, self.0.choose(&mut rng).cloned().unwrap());
+        for i in 1..k {
+            centroids.centroid_map.insert(
+                i,
+                self.0
+                    .choose_weighted(&mut rng, |point| {
+                        centroids
+                            .centroid_map
+                            .values()
+                            .map(|centroid| {
+                                centroid.distance(point, Some(DistanceMetric::Euclidean))
+                            })
+                            .reduce(f64::min)
+                            .unwrap()
+                    })
+                    .cloned()
+                    .unwrap(),
+            );
+        }
+        centroids
     }
 }
 
@@ -218,15 +237,23 @@ impl Default for Kmeans {
 }
 
 impl Kmeans {
-    pub fn new(k: usize, 
-               max_iter: usize, 
-               centroids_init_method: CentroidsInitMethod,
-               distance_metric: DistanceMetric,
-               random_seed: Option<u64>,
+    pub fn new(
+        k: usize,
+        max_iter: usize,
+        centroids_init_method: CentroidsInitMethod,
+        distance_metric: DistanceMetric,
+        random_seed: Option<u64>,
     ) -> Self {
-        Kmeans{k, max_iter, centroids_init_method, distance_metric, random_seed, ..Kmeans::default()}
+        Kmeans {
+            k,
+            max_iter,
+            centroids_init_method,
+            distance_metric,
+            random_seed,
+            ..Kmeans::default()
+        }
     }
-    
+
     pub fn fit(&mut self, point_values: Vec<Vec<f64>>) {
         let points = &Points(
             point_values
@@ -305,7 +332,7 @@ mod tests {
     }
 
     #[test]
-    fn test_dataset_get_init_centroids() {
+    fn test_dataset_get_random_init_centroids() {
         let point_values = create_test_points();
         let dataset = Points(
             point_values
@@ -313,7 +340,7 @@ mod tests {
                 .map(|v| Point { values: v })
                 .collect(),
         );
-        let centroids = dataset.get_init_centroids(CentroidsInitMethod::Random, 2, Some(42));
+        let centroids = dataset.get_init_centroids(CentroidsInitMethod::Random, 2, None);
 
         assert_eq!(centroids.centroid_map.len(), 2);
         for (_, centroid) in centroids.centroid_map.iter() {
@@ -322,22 +349,24 @@ mod tests {
     }
 
     #[test]
-    fn test_dataset_sample() {
-        let points_values = create_test_points();
+    fn test_dataset_get_kmeans_plus_init_centroids() {
+        let point_values = create_test_points();
         let dataset = Points(
-            points_values
+            point_values
                 .into_iter()
                 .map(|v| Point { values: v })
                 .collect(),
         );
-        let sampled = dataset.sample(2, Some(42));
+        let centroids = dataset.get_init_centroids(CentroidsInitMethod::KmeansPlusPlus, 2, None);
 
-        assert_eq!(sampled.0.len(), 2);
-        for point in sampled.0.iter() {
-            assert!(dataset.0.contains(point));
+        assert_eq!(centroids.centroid_map.len(), 2);
+        for (_, centroid) in centroids.centroid_map.iter() {
+            assert_eq!(centroid.values.len(), 2);
         }
+        // the two init centroids from two different clusters
+        assert_eq!(centroids.centroid_map.values().map(|x| x.values[0]).sum::<f64>(), 1.0 + 10.0)
     }
-
+    
     #[test]
     fn test_point_distance() {
         let p1 = Point {

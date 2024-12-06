@@ -8,8 +8,18 @@ pub struct Kmeans {
 
 #[pymethods]
 impl Kmeans {
+    fn __repr__(&self) -> String {
+        format!(
+            "Kmeans(k={}, max_iter={}, centroids_init_method={}, distance_metric={})",
+            self.inner.k,
+            self.inner.max_iter,
+            self.inner.centroids_init_method,
+            self.inner.distance_metric,
+        )
+    }
+    
     #[new]
-    #[pyo3(signature = (k, max_iter, centroids_init_method="random", distance_metric="euclidean", random_seed=None))]
+    #[pyo3(signature = (k, max_iter=100, centroids_init_method="random", distance_metric="euclidean", random_seed=None))]
     fn py_new(
         k: usize,
         max_iter: usize,

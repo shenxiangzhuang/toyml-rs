@@ -1,39 +1,21 @@
+use parse_display::{Display, FromStr};
 use rand::prelude::SeedableRng;
 use rand::random;
 use rand::seq::SliceRandom;
 use std::collections::HashMap;
-use std::str::FromStr;
 
-#[derive(Debug)]
+#[derive(Debug, Display, FromStr)]
 pub enum DistanceMetric {
+    #[display("euclidean")]
     Euclidean,
 }
 
-impl FromStr for DistanceMetric {
-    type Err = ();
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "euclidean" => Ok(DistanceMetric::Euclidean),
-            _ => Err(()),
-        }
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Display, FromStr)]
 pub enum CentroidsInitMethod {
+    #[display("random")]
     Random,
+    #[display("kmeans++")]
     KmeansPlusPlus,
-}
-
-impl FromStr for CentroidsInitMethod {
-    type Err = ();
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "random" => Ok(CentroidsInitMethod::Random),
-            "kmeans++" => Ok(CentroidsInitMethod::KmeansPlusPlus),
-            _ => Err(()),
-        }
-    }
 }
 
 /// Dataset structs
@@ -364,9 +346,16 @@ mod tests {
             assert_eq!(centroid.values.len(), 2);
         }
         // the two init centroids from two different clusters
-        assert_eq!(centroids.centroid_map.values().map(|x| x.values[0]).sum::<f64>(), 1.0 + 10.0)
+        assert_eq!(
+            centroids
+                .centroid_map
+                .values()
+                .map(|x| x.values[0])
+                .sum::<f64>(),
+            1.0 + 10.0
+        )
     }
-    
+
     #[test]
     fn test_point_distance() {
         let p1 = Point {

@@ -19,6 +19,7 @@ python-source = "python"
 
 [project.optional-dependencies]
 dev = ["ipython", "ruff"]
+test = ["pytest"]
 
 
 [tool.ruff]

@@ -147,8 +147,8 @@ impl Kmeans {
     }
 
     #[wasm_bindgen]
-    pub fn fit_predict(&mut self, point_values: VecVecF64) -> Result<usize, JsError> {
+    pub fn fit_predict(&mut self, point_values: VecVecF64) -> Result<Vec<usize>, JsError> {
         self.fit(point_values);
-        Ok(self.inner.max_iter)
+        Ok(self.inner.get_labels().0.to_vec())
     }
 }

@@ -9,6 +9,8 @@
     "webpack": "github:daxpedda/webpack#externref",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.0.4"
+  },
+  "dependencies": {
+    "toymlrs": "file:pkg"
   }
 }
-

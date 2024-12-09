@@ -9,6 +9,17 @@ module.exports = {
         path: path.resolve(__dirname, 'dist'),
         filename: 'index.js',
     },
+    module: {
+        rules: [
+            {
+                test: /\.(ts|tsx|js|jsx)$/,
+                exclude: /node_modules/,
+                use: {
+                    loader: 'ts-loader'
+                }
+            }
+        ]
+    },
     plugins: [
         new HtmlWebpackPlugin(),
         new WasmPackPlugin({
@@ -18,6 +29,9 @@ module.exports = {
     mode: 'development',
     experiments: {
         asyncWebAssembly: true
+    },
+    resolve: {
+        extensions: ['.ts', '.tsx', '.js', '.jsx']
     }
 };
 

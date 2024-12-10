@@ -2,7 +2,9 @@ use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 extern "C" {
-    fn alert(s: &str);
+    // https://github.com/rustwasm/wasm-bindgen/issues/201
+    #[wasm_bindgen]
+    pub fn alert(s: &str);
 
     /// Custom type for `Vec<usize>`.
     #[wasm_bindgen(typescript_type = "number[] | Uint32Array")]

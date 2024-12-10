@@ -2,7 +2,7 @@ import init, {greet, Kmeans} from "toymlrs";
 
 async function run() {
     await init().then(() => console.log("toymlrs kmeans initialized"));
-    greet("Hello, ToymlRS!");
+    greet("ToymlRS");
     const options = {
         k: 2,
         maxIter: 100,

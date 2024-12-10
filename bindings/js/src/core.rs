@@ -4,7 +4,7 @@ use wasm_bindgen::prelude::*;
 extern "C" {
     // https://github.com/rustwasm/wasm-bindgen/issues/201
     #[wasm_bindgen]
-    pub fn alert(s: &str);
+    fn alert(s: &str);
 
     /// Custom type for `Vec<usize>`.
     #[wasm_bindgen(typescript_type = "number[] | Uint32Array")]

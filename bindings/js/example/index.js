@@ -1,8 +1,8 @@
 import init, {greet, Kmeans} from "toymlrs";
 
 async function run() {
-    greet("Toymlrs")
     await init().then(() => console.log("toymlrs kmeans initialized"));
+    greet("Hello, ToymlRS!");
     const options = {
         k: 2,
         maxIter: 100,

@@ -1,10 +1,21 @@
 //! Bindings for clustering algorithms.
+
 use crate::core::*;
 use serde::Deserialize;
 use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
-/// Options for the dynamic time warping calculation.
+/// The distance function to use for point distance.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Tsify, Default)]
+#[serde(rename_all = "lowercase")]
+#[tsify(from_wasm_abi)]
+pub enum CentroidsInitMethod {
+    Random,
+    #[default]
+    KmeansPlusPlus,
+}
+
+/// The kmeans options.
 #[derive(Clone, Debug, Default, Deserialize, Tsify)]
 #[serde(rename_all = "camelCase")]
 #[tsify(from_wasm_abi)]
@@ -12,10 +23,11 @@ pub struct KmeansOptions {
     /// The k in kmeans
     pub k: usize,
     pub max_iter: usize,
+    pub centroids_init_method: CentroidsInitMethod,
     pub random_seed: Option<u64>,
 }
 
-/// A DBSCAN clustering algorithm.
+/// A Kmeans clustering algorithm.
 #[derive(Debug)]
 #[wasm_bindgen]
 pub struct Kmeans {
@@ -31,7 +43,14 @@ impl Kmeans {
             inner: toymlrs_clustering::kmeans::Kmeans::new(
                 opts.k,
                 opts.max_iter,
-                toymlrs_clustering::kmeans::CentroidsInitMethod::KmeansPlusPlus,
+                match opts.centroids_init_method {
+                    CentroidsInitMethod::Random => {
+                        toymlrs_clustering::kmeans::CentroidsInitMethod::Random
+                    }
+                    CentroidsInitMethod::KmeansPlusPlus => {
+                        toymlrs_clustering::kmeans::CentroidsInitMethod::KmeansPlusPlus
+                    }
+                },
                 toymlrs_clustering::kmeans::DistanceMetric::Euclidean,
                 opts.random_seed,
             ),
@@ -47,6 +66,20 @@ impl Kmeans {
     #[wasm_bindgen]
     pub fn fit_predict(&mut self, point_values: VecVecF64) -> Result<Vec<usize>, JsError> {
         self.fit(point_values);
+        self.labels_()
+    }
+
+    #[wasm_bindgen]
+    pub fn labels_(&self) -> Result<Vec<usize>, JsError> {
         Ok(self.inner.get_labels().0.to_vec())
+    }
+
+    #[wasm_bindgen]
+    pub fn centroids_(&self) -> Result<js_sys::Map, JsError> {
+        let js_map = js_sys::Map::new();
+        for (key, value) in self.inner.get_centroids().centroid_map.iter() {
+            js_map.set(&JsValue::from(*key), &JsValue::from(value.values.to_vec()));
+        }
+        Ok(js_map)
     }
 }

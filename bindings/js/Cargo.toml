@@ -1,0 +1,18 @@
+[package]
+name = "toymlrs"
+version = "0.0.7"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "=0.2.99"
+serde = { version = "1.0.215", features = ["derive"] }
+tsify-next = "0.5.4"
+toymlrs-clustering = { version = ">=0", path = "../../crates/toymlrs-clustering" }
+getrandom = { version = "0.2", features = ["js"] }
+serde-wasm-bindgen = "0.6.0"
+js-sys = "0.3.76"
+web-sys = { version = "0.3", features = ["console"] }
+

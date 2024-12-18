@@ -151,6 +151,7 @@ impl Clusters {
 
 #[derive(Debug, Default)]
 pub struct Centroids {
+    // centroid map: centroid id as key, centroid point as value
     pub centroid_map: HashMap<usize, Point>,
 }
 

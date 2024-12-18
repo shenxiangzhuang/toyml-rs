@@ -1,7 +1,7 @@
 //! Bindings for clustering algorithms.
 
 use crate::core::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
@@ -33,6 +33,24 @@ pub struct KmeansOptions {
 #[wasm_bindgen]
 pub struct Kmeans {
     inner: toymlrs_clustering::kmeans::Kmeans,
+}
+
+#[derive(Debug, Clone, Serialize, Tsify)]
+#[tsify(into_wasm_abi)]
+pub struct Centroids {
+    pub centroid_map: HashMap<usize, Vec<f64>>,
+}
+
+impl From<&toymlrs_clustering::kmeans::Centroids> for Centroids {
+    fn from(c: &toymlrs_clustering::kmeans::Centroids) -> Self {
+        Self {
+            centroid_map: c
+                .centroid_map
+                .iter()
+                .map(|(k, v)| (*k, v.values.clone()))
+                .collect(),
+        }
+    }
 }
 
 #[wasm_bindgen]
@@ -76,14 +94,7 @@ impl Kmeans {
     }
 
     #[wasm_bindgen]
-    pub fn centroids_(&self) -> Result<JsValue, JsError> {
-        let centroids: HashMap<usize, Vec<f64>> = self
-            .inner
-            .get_centroids()
-            .centroid_map
-            .iter()
-            .map(|(k, v)| (*k, v.values.to_vec()))
-            .collect();
-        Ok(serde_wasm_bindgen::to_value(&centroids)?)
+    pub fn centroids_(&self) -> Result<Centroids, JsError> {
+        Ok(self.inner.get_centroids().into())
     }
 }

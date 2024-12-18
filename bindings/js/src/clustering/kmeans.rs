@@ -2,6 +2,7 @@
 
 use crate::core::*;
 use serde::Deserialize;
+use std::collections::HashMap;
 use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
@@ -75,11 +76,14 @@ impl Kmeans {
     }
 
     #[wasm_bindgen]
-    pub fn centroids_(&self) -> Result<js_sys::Map, JsError> {
-        let js_map = js_sys::Map::new();
-        for (key, value) in self.inner.get_centroids().centroid_map.iter() {
-            js_map.set(&JsValue::from(*key), &JsValue::from(value.values.to_vec()));
-        }
-        Ok(js_map)
+    pub fn centroids_(&self) -> Result<JsValue, JsError> {
+        let centroids: HashMap<usize, Vec<f64>> = self
+            .inner
+            .get_centroids()
+            .centroid_map
+            .iter()
+            .map(|(k, v)| (*k, v.values.to_vec()))
+            .collect();
+        Ok(serde_wasm_bindgen::to_value(&centroids)?)
     }
 }

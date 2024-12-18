@@ -1,4 +1,4 @@
-//! Bindings for clustering algorithms.
+//! Bindings for kmeans clustering algorithms.
 
 use crate::core::*;
 use serde::{Deserialize, Serialize};
@@ -8,12 +8,24 @@ use wasm_bindgen::prelude::*;
 
 /// The distance function to use for point distance.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Tsify, Default)]
-#[serde(rename_all = "lowercase")]
 #[tsify(from_wasm_abi)]
 pub enum CentroidsInitMethod {
+    #[serde(rename = "random")]
     Random,
     #[default]
+    #[serde(rename = "kmeans++")]
     KmeansPlusPlus,
+}
+
+impl From<CentroidsInitMethod> for toymlrs_clustering::kmeans::CentroidsInitMethod {
+    fn from(method: CentroidsInitMethod) -> Self {
+        match method {
+            CentroidsInitMethod::Random => toymlrs_clustering::kmeans::CentroidsInitMethod::Random,
+            CentroidsInitMethod::KmeansPlusPlus => {
+                toymlrs_clustering::kmeans::CentroidsInitMethod::KmeansPlusPlus
+            }
+        }
+    }
 }
 
 /// The kmeans options.
@@ -23,8 +35,8 @@ pub enum CentroidsInitMethod {
 pub struct KmeansOptions {
     /// The k in kmeans
     pub k: usize,
-    pub max_iter: usize,
     pub centroids_init_method: CentroidsInitMethod,
+    pub max_iter: usize,
     pub random_seed: Option<u64>,
 }
 
@@ -53,6 +65,24 @@ impl From<&toymlrs_clustering::kmeans::Centroids> for Centroids {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Tsify)]
+#[tsify(into_wasm_abi)]
+pub struct Clusters {
+    pub cluster_map: HashMap<usize, Vec<usize>>,
+}
+
+impl From<&toymlrs_clustering::kmeans::Clusters> for Clusters {
+    fn from(c: &toymlrs_clustering::kmeans::Clusters) -> Self {
+        Self {
+            cluster_map: c
+                .cluster_map
+                .iter()
+                .map(|(k, v)| (*k, v.point_indices.clone()))
+                .collect(),
+        }
+    }
+}
+
 #[wasm_bindgen]
 impl Kmeans {
     /// Create a new Kmeans instance.
@@ -62,14 +92,7 @@ impl Kmeans {
             inner: toymlrs_clustering::kmeans::Kmeans::new(
                 opts.k,
                 opts.max_iter,
-                match opts.centroids_init_method {
-                    CentroidsInitMethod::Random => {
-                        toymlrs_clustering::kmeans::CentroidsInitMethod::Random
-                    }
-                    CentroidsInitMethod::KmeansPlusPlus => {
-                        toymlrs_clustering::kmeans::CentroidsInitMethod::KmeansPlusPlus
-                    }
-                },
+                opts.centroids_init_method.into(),
                 toymlrs_clustering::kmeans::DistanceMetric::Euclidean,
                 opts.random_seed,
             ),
@@ -96,5 +119,10 @@ impl Kmeans {
     #[wasm_bindgen]
     pub fn centroids_(&self) -> Result<Centroids, JsError> {
         Ok(self.inner.get_centroids().into())
+    }
+
+    #[wasm_bindgen]
+    pub fn cluster_(&self) -> Result<Clusters, JsError> {
+        Ok(self.inner.get_clusters().into())
     }
 }

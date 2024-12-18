@@ -5,6 +5,7 @@ async function run() {
     greet("ToymlRS");
     const options = {
         k: 2,
+        centroidsInitMethod: "kmeans++",
         maxIter: 100,
         randomSeed: 42,
     };
@@ -19,12 +20,14 @@ async function run() {
         [10.1, 10.1],
     ];
 
-    // Use fit_predict to get cluster labels
-    const labels = kmeans.fit_predict(points);
-    console.log("Cluster labels:", Array.from(labels));
+    let labels = kmeans.fit_predict([[0], [0], [1], [1]]);
+    console.log("Point labels:", labels);
 
-    // Or use fit separately
-    kmeans.fit(points);
+    const clusters = kmeans.cluster_();
+    console.log("Cluster clusters:", clusters);
+
+    const centroids = kmeans.centroids_();
+    console.log("Cluster centroids:", centroids);
 }
 
 run().then(r => console.log("Hello toymlrs"));

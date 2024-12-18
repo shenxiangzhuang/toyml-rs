@@ -37,6 +37,6 @@
   },
   "dependencies": {
     "@bsull/augurs": "^0.7.0",
-    "toymlrs": "0.0.2"
+    "toymlrs": "^0.0.7"
   }
 }

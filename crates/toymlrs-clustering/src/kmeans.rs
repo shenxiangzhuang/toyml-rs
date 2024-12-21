@@ -4,12 +4,16 @@ use rand::random;
 use rand::seq::SliceRandom;
 use std::collections::HashMap;
 
+/// Used to measure the distance between points.
+///
+/// Now only support Euclidean distance.
 #[derive(Debug, Display, FromStr)]
 pub enum DistanceMetric {
     #[display("euclidean")]
     Euclidean,
 }
 
+/// Usually we should choose to use kmeans++ algorithm for better result.
 #[derive(Debug, Copy, Clone, Display, FromStr)]
 pub enum CentroidsInitMethod {
     #[display("random")]
@@ -18,17 +22,19 @@ pub enum CentroidsInitMethod {
     KmeansPlusPlus,
 }
 
-/// Dataset structs
+/// The point in dataset.
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct Point {
     pub values: Vec<f64>,
 }
 
 impl Point {
+    /// The feature dimension of data point.
     pub fn dim(&self) -> usize {
         self.values.len()
     }
 
+    /// Calculate the distance between two points.
     pub fn distance(&self, other: &Point, metric: Option<DistanceMetric>) -> f64 {
         if self.values.len() != other.values.len() {
             panic!(

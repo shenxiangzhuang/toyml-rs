@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 /// Used to measure the distance between points.
 ///
-/// Now only support Euclidean distance.
+/// Currently only supports Euclidean distance.
 #[derive(Debug, Display, FromStr)]
 pub enum DistanceMetric {
     #[display("euclidean")]

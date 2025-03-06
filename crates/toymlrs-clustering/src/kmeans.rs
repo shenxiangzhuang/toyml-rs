@@ -13,7 +13,7 @@ pub enum DistanceMetric {
     Euclidean,
 }
 
-/// Usually we should choose to use kmeans++ algorithm for better result.
+/// It is recommended to use kmeans++ for better results.
 #[derive(Debug, Copy, Clone, Display, FromStr)]
 pub enum CentroidsInitMethod {
     #[display("random")]
